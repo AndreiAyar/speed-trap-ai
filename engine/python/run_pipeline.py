@@ -31,14 +31,20 @@ from modules.privacy_blur import blur_bbox_region
 from modules.speed_gate import TwoLineSpeedGate
 
 
-# This helper converts bbox to integer center point.
-def bbox_center(bbox: List[float]) -> tuple:
+# This helper converts bbox to anchor point used for line crossing logic.
+def bbox_anchor_point(bbox: List[float], anchor_mode: str = "bottom_center") -> tuple:
     # We unpack coordinates from xyxy format.
     x1, y1, x2, y2 = bbox
 
-    # We compute center coordinates.
+    # We compute anchor x as horizontal midpoint.
     cx = (x1 + x2) / 2.0
-    cy = (y1 + y2) / 2.0
+
+    # We use bottom-center by default because it follows road contact point.
+    if anchor_mode == "bottom_center":
+        cy = y2
+    # We keep center option for experimentation/debug.
+    else:
+        cy = (y1 + y2) / 2.0
 
     # We return center as float tuple.
     return float(cx), float(cy)
@@ -211,11 +217,22 @@ def main():
     # We hold track-level aggregated samples for CSV summary.
     track_samples: Dict[int, Dict] = {}
 
+    # We hold drawing history points per track for trail rendering.
+    track_trails: Dict[int, List[tuple]] = {}
+
     # We prepare video writer lazily once first frame arrives.
     writer = None
 
     # We define allowed class ids from config.
     allowed_classes = cfg.get("classes", [2, 3, 5, 7])
+
+    # We select anchor point mode used by speed gate crossing.
+    anchor_mode = str(cfg.get("anchor_point", "bottom_center"))
+
+    # We read trail drawing configuration from scene config.
+    trail_enabled = bool(cfg.get("trail_enabled", True))
+    trail_length_frames = int(cfg.get("trail_length_frames", 22))
+    trail_thickness = int(cfg.get("trail_thickness", 2))
 
     # We iterate tracked frames from detector/tracker pipeline.
     for item in iter_tracked_frames(
@@ -272,11 +289,24 @@ def main():
             # We unpack bbox in xyxy format.
             bbox = det["bbox"]
 
-            # We compute center point used by speed gate logic.
-            center = bbox_center(bbox)
+            # We compute anchor point used by speed gate logic.
+            center = bbox_anchor_point(bbox, anchor_mode=anchor_mode)
 
             # We update gate state and optionally get speed.
             gate_info = gate.update_track(track_id=track_id, center=center, timestamp_ms=timestamp_ms)
+
+            # We update per-track trail points for visual movement history.
+            if trail_enabled:
+                # We initialize trail list on first point.
+                if track_id not in track_trails:
+                    track_trails[track_id] = []
+
+                # We append current anchor point as integer pixel pair.
+                track_trails[track_id].append((int(center[0]), int(center[1])))
+
+                # We clamp stored points to configured trail length.
+                if len(track_trails[track_id]) > trail_length_frames:
+                    track_trails[track_id] = track_trails[track_id][-trail_length_frames:]
 
             # We initialize per-track sample store on first sighting.
             if track_id not in track_samples:
@@ -311,6 +341,21 @@ def main():
             # We draw bounding box after blur so box remains visible.
             cv2.rectangle(frame, (x1, y1), (x2, y2), (50, 220, 255), 2)
 
+            # We draw movement trail behind current track when enough points exist.
+            if trail_enabled and track_id in track_trails and len(track_trails[track_id]) >= 2:
+                # We convert trail points into OpenCV polyline array.
+                trail_points = np.array(track_trails[track_id], dtype=np.int32)
+
+                # We draw open polyline to show recent trajectory.
+                cv2.polylines(
+                    frame,
+                    [trail_points],
+                    isClosed=False,
+                    color=(255, 230, 90),
+                    thickness=trail_thickness,
+                    lineType=cv2.LINE_AA,
+                )
+
             # We build label text with track id and optional speed.
             if gate_info.get("speed_kmh") is not None:
                 label = f"ID {track_id} | Estimare AI: {gate_info['speed_kmh']} km/h"
@@ -329,6 +374,7 @@ def main():
                     "classId": class_id,
                     "bbox": [round(float(v), 2) for v in bbox],
                     "center": [round(center[0], 2), round(center[1], 2)],
+                    "anchorMode": anchor_mode,
                     "insideRoi": bool(gate_info.get("inside_roi", False)),
                     "crossedAms": gate_info.get("crossed_a_ms"),
                     "crossedBms": gate_info.get("crossed_b_ms"),

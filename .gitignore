@@ -16,6 +16,8 @@ __pycache__/
 # Local database and generated data are runtime artifacts.
 data/output/*
 !data/output/.gitkeep
+data/input/*
+!data/input/.gitkeep
 *.sqlite
 *.sqlite3
 
