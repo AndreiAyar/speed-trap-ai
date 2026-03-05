@@ -1,0 +1,10 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+// Details component provides a readable single-track summary.
+export function VehicleDetails({ track, disclaimer }) {
+    // We render helper text when nothing is selected.
+    if (!track) {
+        return (_jsxs("section", { className: "panel", children: [_jsx("h2", { className: "panel-title", children: "Detalii vehicul" }), _jsx("p", { className: "panel-subtitle", children: "Selecteaza un rand din tabel pentru a vedea detalii." })] }));
+    }
+    // We render selected track metrics.
+    return (_jsxs("section", { className: "panel", children: [_jsxs("h2", { className: "panel-title", children: ["Detalii vehicul ID ", track.trackId] }), _jsxs("div", { className: "stats-grid", children: [_jsxs("div", { className: "stat-item", children: [_jsx("span", { className: "stat-label", children: "Viteza maxima" }), _jsxs("span", { className: "stat-value", children: [track.maxSpeedKmh ?? "-", " km/h"] })] }), _jsxs("div", { className: "stat-item", children: [_jsx("span", { className: "stat-label", children: "Viteza medie" }), _jsxs("span", { className: "stat-value", children: [track.avgSpeedKmh ?? "-", " km/h"] })] }), _jsxs("div", { className: "stat-item", children: [_jsx("span", { className: "stat-label", children: "Primul frame (ms)" }), _jsx("span", { className: "stat-value", children: track.firstSeenMs })] }), _jsxs("div", { className: "stat-item", children: [_jsx("span", { className: "stat-label", children: "Ultimul frame (ms)" }), _jsx("span", { className: "stat-value", children: track.lastSeenMs })] }), _jsxs("div", { className: "stat-item", children: [_jsx("span", { className: "stat-label", children: "Trecere Linia A" }), _jsx("span", { className: "stat-value", children: track.crossedAms ?? "-" })] }), _jsxs("div", { className: "stat-item", children: [_jsx("span", { className: "stat-label", children: "Trecere Linia B" }), _jsx("span", { className: "stat-value", children: track.crossedBms ?? "-" })] })] }), _jsx("p", { className: "disclaimer-text", children: disclaimer ?? "Estimare AI pentru divertisment." })] }));
+}
