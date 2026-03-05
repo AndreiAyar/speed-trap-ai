@@ -6,6 +6,7 @@ dist/
 build/
 .vite/
 coverage/
+*.tsbuildinfo
 
 # Python virtual environments and cache files should stay local.
 .venv/

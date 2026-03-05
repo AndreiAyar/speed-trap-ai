@@ -12,3 +12,6 @@ PyYAML>=6.0.1
 
 # Pandas is used to generate a simple CSV summary.
 pandas>=2.2.0
+
+# LAP is required by Ultralytics tracking assignment (ByteTrack/BOT-SORT internals).
+lap>=0.5.13

@@ -43,6 +43,18 @@ export interface JobResponse {
   };
   // Optional failure text.
   errorMessage?: string;
+  // Timestamp when job was created.
+  createdAt: string;
+  // Optional timestamp when job finished or failed.
+  finishedAt?: string;
+}
+
+// Type for recent jobs list payload.
+export interface JobsListResponse {
+  // Recent jobs from newest to oldest.
+  jobs: JobResponse[];
+  // Number of jobs returned.
+  count: number;
 }
 
 // Type for one vehicle row.
@@ -107,6 +119,12 @@ export async function createJob(payload: CreateJobPayload): Promise<CreateJobRes
 export async function getJob(jobId: string): Promise<JobResponse> {
   const res = await fetch(`${API_BASE}/jobs/${jobId}`);
   return parseJsonOrThrow<JobResponse>(res);
+}
+
+// API call: fetch recent jobs for history panel and refresh recovery.
+export async function getJobs(limit: number = 30): Promise<JobsListResponse> {
+  const res = await fetch(`${API_BASE}/jobs?limit=${encodeURIComponent(String(limit))}`);
+  return parseJsonOrThrow<JobsListResponse>(res);
 }
 
 // API call: fetch vehicle leaderboard.

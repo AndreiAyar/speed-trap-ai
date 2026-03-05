@@ -1,20 +1,25 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-// Main dashboard component orchestrates upload, polling, leaderboard, and preview.
+// Main dashboard component orchestrates upload, polling, leaderboard, preview, and history.
 // React hooks manage state and side effects.
 import { useEffect, useMemo, useState } from "react";
 // We import API helpers and typed payloads.
-import { getJob, getVehicle, getVehicles, toArtifactUrl } from "./lib/api";
+import { getJob, getJobs, getVehicle, getVehicles, toArtifactUrl, } from "./lib/api";
 // We import UI components used in page layout.
 import { JobUpload } from "./components/JobUpload";
 import { LeaderboardTable } from "./components/LeaderboardTable";
 import { VehicleDetails } from "./components/VehicleDetails";
 import { VideoPreview } from "./components/VideoPreview";
+import { RecentJobs } from "./components/RecentJobs";
+// We define localStorage key for restoring selected job after refresh.
+const ACTIVE_JOB_STORAGE_KEY = "speedTrap.activeJobId";
 // App component is the top-level screen.
 export function App() {
-    // We store currently active job id from upload action.
+    // We store currently active job id from upload action or history click.
     const [jobId, setJobId] = useState("");
     // We store latest job payload from polling endpoint.
     const [job, setJob] = useState(null);
+    // We store recent job history from SQLite-backed API.
+    const [recentJobs, setRecentJobs] = useState([]);
     // We store fetched leaderboard rows.
     const [tracks, setTracks] = useState([]);
     // We store selected row id for detail view.
@@ -25,9 +30,53 @@ export function App() {
     const [trackDisclaimer, setTrackDisclaimer] = useState("Estimare AI pentru divertisment.");
     // We store global page error for API failures.
     const [error, setError] = useState(null);
-    // We poll job status while active job is running.
+    // This helper loads recent jobs from backend and updates history state.
+    const loadRecentJobs = async () => {
+        try {
+            // We fetch up to 50 latest jobs.
+            const list = await getJobs(50);
+            // We store recent jobs for UI rendering.
+            setRecentJobs(list.jobs);
+            // We return fetched list for optional caller decisions.
+            return list.jobs;
+        }
+        catch (err) {
+            // We expose readable error to user when history fetch fails.
+            setError(err instanceof Error ? err.message : "Failed to load recent jobs.");
+            return [];
+        }
+    };
+    // On first mount we restore last selected job or fallback to newest job.
     useEffect(() => {
-        // We skip polling if no job id exists.
+        // We define bootstrap async flow.
+        const bootstrap = async () => {
+            // We load job history from API.
+            const jobs = await loadRecentJobs();
+            // We read previously selected job id from localStorage.
+            const storedJobId = window.localStorage.getItem(ACTIVE_JOB_STORAGE_KEY) ?? "";
+            // We restore stored job id when it still exists in history.
+            if (storedJobId && jobs.some((entry) => entry.id === storedJobId)) {
+                setJobId(storedJobId);
+                return;
+            }
+            // We fallback to latest job when storage is empty/outdated.
+            if (jobs.length > 0) {
+                setJobId(jobs[0].id);
+            }
+        };
+        // We run bootstrap once.
+        void bootstrap();
+    }, []);
+    // We persist selected job id so refresh keeps the same context.
+    useEffect(() => {
+        // We store active job id when available.
+        if (jobId) {
+            window.localStorage.setItem(ACTIVE_JOB_STORAGE_KEY, jobId);
+        }
+    }, [jobId]);
+    // We poll active job status and fetch leaderboard when done.
+    useEffect(() => {
+        // We skip polling if no active job id exists.
         if (!jobId) {
             return;
         }
@@ -49,6 +98,15 @@ export function App() {
                         setSelectedTrackId(vehicles.tracks[0].trackId);
                     }
                 }
+                // We clear stale leaderboard when job failed.
+                if (latestJob.status === "failed") {
+                    setTracks([]);
+                    setSelectedTrackId(null);
+                    setSelectedTrack(null);
+                }
+                // We refresh sidebar history to reflect updated status/progress.
+                const jobs = await getJobs(50);
+                setRecentJobs(jobs.jobs);
             }
             catch (err) {
                 // We map errors to readable banner text.
@@ -109,6 +167,15 @@ export function App() {
                             setSelectedTrackId(null);
                             setSelectedTrack(null);
                             setJob(null);
+                            setError(null);
+                            // We refresh history after creating a new job.
+                            void loadRecentJobs();
+                        } }), _jsx(RecentJobs, { jobs: recentJobs, activeJobId: jobId, onSelectJob: (selectedJobId) => {
+                            // We switch entire context to selected history job.
+                            setJobId(selectedJobId);
+                            setTracks([]);
+                            setSelectedTrackId(null);
+                            setSelectedTrack(null);
                             setError(null);
                         } }), _jsx(VideoPreview, { videoUrl: overlayUrl }), _jsx(LeaderboardTable, { tracks: tracks, selectedTrackId: selectedTrackId, onSelectTrack: (trackId) => setSelectedTrackId(trackId) }), _jsx(VehicleDetails, { track: selectedTrack, disclaimer: trackDisclaimer })] })] }));
 }
