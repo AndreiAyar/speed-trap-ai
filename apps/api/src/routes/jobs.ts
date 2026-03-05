@@ -2,6 +2,7 @@
 
 // We import express router helper.
 import { Router } from "express";
+import fs from "node:fs";
 
 // We import contracts for request typing.
 import type { CreateJobRequest } from "../types/contracts.js";
@@ -14,6 +15,36 @@ import { getJob, getVehicleTrack, getVehicleTracks } from "../services/sqlite.js
 
 // We create isolated router instance.
 export const jobsRouter = Router();
+
+// This helper loads recent events for one track from events JSONL.
+function loadTrackEventSamples(eventsPath: string, trackId: number, maxItems: number = 25): Array<Record<string, unknown>> {
+  // We return empty list when events file does not exist.
+  if (!eventsPath || !fs.existsSync(eventsPath)) {
+    return [];
+  }
+
+  // We read all lines from JSONL output file.
+  const lines = fs.readFileSync(eventsPath, "utf-8").split(/\r?\n/).filter(Boolean);
+
+  // We parse lines and keep only current track rows.
+  const rows: Array<Record<string, unknown>> = [];
+  for (const line of lines) {
+    try {
+      // We parse one JSON line.
+      const event = JSON.parse(line) as Record<string, unknown>;
+
+      // We keep rows matching selected track id.
+      if (Number(event.trackId) === trackId) {
+        rows.push(event);
+      }
+    } catch {
+      // We ignore malformed lines to keep endpoint robust.
+    }
+  }
+
+  // We return only the latest N samples for smaller payloads.
+  return rows.slice(-maxItems);
+}
 
 // Route: create new processing job.
 jobsRouter.post("/jobs", (req, res) => {
@@ -95,10 +126,22 @@ jobsRouter.get("/jobs/:jobId/vehicles/:trackId", (req, res) => {
     return res.status(404).json({ error: "Track not found." });
   }
 
+  // We fetch job to locate events artifact file.
+  const job = getJob(jobId);
+
+  // We load recent event samples for selected track when available.
+  const recentEvents = loadTrackEventSamples(job?.artifacts.eventsJsonl ?? "", numericTrackId);
+
   // We include basic interpretation hints for UI.
   return res.json({
     jobId,
     track,
+    recentEvents,
+    snapshots: {
+      // MVP does not export image snapshots yet, but field exists for extension.
+      available: false,
+      reason: "Snapshot export is not implemented in MVP.",
+    },
     notes: {
       disclaimer: "Estimare AI pentru divertisment. Nu este masurare legala.",
       speedMethod: "Two-line gate (A->B)",

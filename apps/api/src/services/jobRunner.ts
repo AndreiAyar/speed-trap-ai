@@ -96,6 +96,11 @@ function parseSummaryCsv(summaryCsvPath: string): VehicleTrack[] {
 
 // This helper starts async job execution and returns initial job record.
 export function createAndRunJob(request: CreateJobRequest): JobRecord {
+  // We normalize source path to absolute path for engine reliability.
+  const normalizedSourcePath = path.isAbsolute(request.sourcePath)
+    ? request.sourcePath
+    : path.join(workspaceRoot, request.sourcePath);
+
   // We generate new stable id for this job.
   const id = `job_${nanoid(10)}`;
 
@@ -109,7 +114,7 @@ export function createAndRunJob(request: CreateJobRequest): JobRecord {
   const job: JobRecord = {
     id,
     status: "queued",
-    sourcePath: request.sourcePath,
+    sourcePath: normalizedSourcePath,
     progress: 0,
     artifacts: {},
     createdAt: new Date().toISOString(),
@@ -119,7 +124,7 @@ export function createAndRunJob(request: CreateJobRequest): JobRecord {
   insertJob(job);
 
   // We run async work without blocking API response.
-  void runJobInternal(id, request, jobOutputDir);
+  void runJobInternal(id, { ...request, sourcePath: normalizedSourcePath }, jobOutputDir);
 
   // We return initial job response.
   return job;
