@@ -7,8 +7,8 @@ import { fileURLToPath } from "node:url";
 // We import fs so we can ensure target folders exist.
 import fs from "node:fs";
 
-// We import Database constructor from better-sqlite3.
-import Database from "better-sqlite3";
+// We import Node's built-in SQLite support to avoid native addon setup pain.
+import { DatabaseSync } from "node:sqlite";
 
 // We import shared types for return payload safety.
 import type { JobRecord, JobStatus, VehicleTrack } from "../types/contracts.js";
@@ -29,7 +29,7 @@ const dbPath = path.join(workspaceRoot, "data", "speed-trap.sqlite");
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 // We open SQLite database in default mode.
-const db = new Database(dbPath);
+const db = new DatabaseSync(dbPath);
 
 // We initialize schema once at module load.
 db.exec(`
@@ -64,20 +64,20 @@ export function insertJob(job: JobRecord): void {
   // We create prepared statement for insertion.
   const stmt = db.prepare(`
     INSERT INTO jobs (id, status, source_path, progress, artifacts_json, error_message, created_at, finished_at)
-    VALUES (@id, @status, @sourcePath, @progress, @artifactsJson, @errorMessage, @createdAt, @finishedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   // We execute insert with serialized artifacts object.
-  stmt.run({
-    id: job.id,
-    status: job.status,
-    sourcePath: job.sourcePath,
-    progress: job.progress,
-    artifactsJson: JSON.stringify(job.artifacts),
-    errorMessage: job.errorMessage ?? null,
-    createdAt: job.createdAt,
-    finishedAt: job.finishedAt ?? null,
-  });
+  stmt.run(
+    job.id,
+    job.status,
+    job.sourcePath,
+    job.progress,
+    JSON.stringify(job.artifacts),
+    job.errorMessage ?? null,
+    job.createdAt,
+    job.finishedAt ?? null
+  );
 }
 
 // This helper updates job state and artifacts as processing changes.
@@ -85,23 +85,23 @@ export function updateJob(job: JobRecord): void {
   // We create prepared statement for updates.
   const stmt = db.prepare(`
     UPDATE jobs
-    SET status = @status,
-        progress = @progress,
-        artifacts_json = @artifactsJson,
-        error_message = @errorMessage,
-        finished_at = @finishedAt
-    WHERE id = @id
+    SET status = ?,
+        progress = ?,
+        artifacts_json = ?,
+        error_message = ?,
+        finished_at = ?
+    WHERE id = ?
   `);
 
   // We run update query with safe null handling.
-  stmt.run({
-    id: job.id,
-    status: job.status,
-    progress: job.progress,
-    artifactsJson: JSON.stringify(job.artifacts),
-    errorMessage: job.errorMessage ?? null,
-    finishedAt: job.finishedAt ?? null,
-  });
+  stmt.run(
+    job.status,
+    job.progress,
+    JSON.stringify(job.artifacts),
+    job.errorMessage ?? null,
+    job.finishedAt ?? null,
+    job.id
+  );
 }
 
 // This helper fetches one job by id.
@@ -138,18 +138,23 @@ export function replaceVehicleTracks(jobId: string, tracks: VehicleTrack[]): voi
       job_id, track_id, class_id, max_speed_kmh, avg_speed_kmh,
       first_seen_ms, last_seen_ms, crossed_a_ms, crossed_b_ms, num_samples
     )
-    VALUES (
-      @jobId, @trackId, @classId, @maxSpeedKmh, @avgSpeedKmh,
-      @firstSeenMs, @lastSeenMs, @crossedAms, @crossedBms, @numSamples
-    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   // We insert each track row.
   for (const track of tracks) {
-    insert.run({
+    insert.run(
       jobId,
-      ...track,
-    });
+      track.trackId,
+      track.classId,
+      track.maxSpeedKmh,
+      track.avgSpeedKmh,
+      track.firstSeenMs,
+      track.lastSeenMs,
+      track.crossedAms,
+      track.crossedBms,
+      track.numSamples
+    );
   }
 }
 
