@@ -1,0 +1,50 @@
+# Camera configuration for one scene/location.
+# IMPORTANT: Update these values for your real filming angle.
+scene_id: "timisoara-default"
+
+# Default model is YOLO26 nano. We keep fallback to YOLO11 nano if model is unavailable.
+model_primary: "yolo26n.pt"
+model_fallback: "yolo11n.pt"
+
+# Tracker config uses ByteTrack for stable ID association.
+tracker: "bytetrack.yaml"
+
+# Vehicle classes to include from COCO labels.
+# car=2, motorcycle=3, bus=5, truck=7 in common COCO mappings.
+classes: [2, 3, 5, 7]
+
+# Detection confidence threshold.
+conf_threshold: 0.25
+
+# Two-line speed gate in frame coordinates (pixels).
+line_a:
+  - [420, 520]
+  - [1450, 520]
+line_b:
+  - [380, 680]
+  - [1490, 680]
+
+# Real-world distance (meters) between line A and line B.
+# You should measure this once per scene.
+distance_meters: 15.0
+
+# Optional ROI polygon to restrict analysis area.
+# If empty, full frame is used.
+roi_polygon:
+  - [200, 300]
+  - [1720, 300]
+  - [1880, 980]
+  - [100, 980]
+
+# Direction vector for expected vehicle movement (x, y).
+# Example below means mostly downward movement in frame.
+direction: [0.0, 1.0]
+
+# Blur vehicles by default for safer publishing.
+privacy_blur: true
+
+# Minimum milliseconds between crossing checks for same track to reduce jitter noise.
+min_crossing_delta_ms: 150
+
+# Overlay text disclaimer shown on output video.
+disclaimer_text: "Doar pentru divertisment. Nu este masurare legala."

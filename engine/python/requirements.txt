@@ -1,0 +1,14 @@
+# Ultralytics provides YOLO model loading and ByteTrack integration.
+ultralytics>=8.3.0
+
+# OpenCV handles frame reading, drawing, blur, and video writing.
+opencv-python>=4.10.0
+
+# NumPy supports geometry and vector math.
+numpy>=1.26.0
+
+# PyYAML is used for camera config loading.
+PyYAML>=6.0.1
+
+# Pandas is used to generate a simple CSV summary.
+pandas>=2.2.0
