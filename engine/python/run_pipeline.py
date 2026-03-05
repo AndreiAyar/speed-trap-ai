@@ -9,6 +9,8 @@ import json
 # os/pathlib support filesystem operations.
 import os
 from pathlib import Path
+import shutil
+import subprocess
 
 # typing clarifies in-memory data structures.
 from typing import Dict, List
@@ -115,6 +117,59 @@ def build_track_summary(track_samples: Dict[int, Dict]) -> List[Dict]:
     return rows
 
 
+# This helper transcodes raw OpenCV MP4 to browser-friendly H.264 output.
+def transcode_overlay_for_web(raw_path: str, final_path: str) -> Dict[str, str]:
+    # We return early when raw file is missing.
+    if not os.path.exists(raw_path):
+        return {"status": "missing_raw", "message": "Raw overlay file not found."}
+
+    # We detect ffmpeg availability before trying to transcode.
+    ffmpeg_bin = shutil.which("ffmpeg")
+
+    # If ffmpeg is unavailable, we fallback to raw file rename/copy.
+    if not ffmpeg_bin:
+        # We replace existing final file first to keep output deterministic.
+        if os.path.exists(final_path):
+            os.remove(final_path)
+        # We move raw file to final path.
+        os.replace(raw_path, final_path)
+        return {"status": "fallback_raw", "message": "ffmpeg not found; raw MP4 kept as final output."}
+
+    # We build ffmpeg command for web-compatible MP4 encoding.
+    command = [
+        ffmpeg_bin,
+        "-y",
+        "-i",
+        raw_path,
+        "-an",
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        final_path,
+    ]
+
+    # We execute ffmpeg and capture output for debugging metadata.
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    # We return success info and cleanup raw file when transcode succeeds.
+    if result.returncode == 0 and os.path.exists(final_path):
+        if os.path.exists(raw_path):
+            os.remove(raw_path)
+        return {"status": "transcoded", "message": "Overlay transcoded to H.264 for browser playback."}
+
+    # We fallback to raw file when ffmpeg command failed for any reason.
+    if os.path.exists(final_path):
+        os.remove(final_path)
+    os.replace(raw_path, final_path)
+    return {
+        "status": "ffmpeg_failed_fallback_raw",
+        "message": f"ffmpeg failed; raw MP4 kept. Details: {result.stderr[:400]}",
+    }
+
+
 # Main CLI entrypoint.
 def main():
     # We define CLI arguments for input, config, and output location.
@@ -133,6 +188,9 @@ def main():
 
     # We build all artifact file paths in one place.
     artifact_paths = build_artifact_paths(args.out)
+
+    # We create a temporary raw overlay path before web-friendly transcode.
+    raw_overlay_path = os.path.join(args.out, "overlay_raw.mp4")
 
     # We read input FPS for reliable timestamp mapping.
     fps = read_video_fps(args.input)
@@ -187,7 +245,7 @@ def main():
 
             # We create writer with same frame dimensions and fps as source.
             writer = cv2.VideoWriter(
-                artifact_paths["overlay_video"],
+                raw_overlay_path,
                 fourcc,
                 fps,
                 (frame.shape[1], frame.shape[0]),
@@ -286,6 +344,9 @@ def main():
     if writer is not None:
         writer.release()
 
+    # We convert raw overlay to browser-friendly H.264 final output.
+    transcode_info = transcode_overlay_for_web(raw_overlay_path, artifact_paths["overlay_video"])
+
     # We build sorted per-track summary rows.
     summary_rows = build_track_summary(track_samples)
 
@@ -310,6 +371,7 @@ def main():
         "numEvents": len(events),
         "numTracks": len(summary_rows),
         "disclaimer": "Doar pentru divertisment. Nu este masurare legala.",
+        "overlayEncoding": transcode_info,
     }
 
     # We write metadata JSON artifact.

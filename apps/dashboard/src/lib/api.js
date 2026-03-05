@@ -28,6 +28,11 @@ export async function getJob(jobId) {
     const res = await fetch(`${API_BASE}/jobs/${jobId}`);
     return parseJsonOrThrow(res);
 }
+// API call: fetch recent jobs for history panel and refresh recovery.
+export async function getJobs(limit = 30) {
+    const res = await fetch(`${API_BASE}/jobs?limit=${encodeURIComponent(String(limit))}`);
+    return parseJsonOrThrow(res);
+}
 // API call: fetch vehicle leaderboard.
 export async function getVehicles(jobId, sort = "maxSpeedKmh", order = "desc") {
     const url = `${API_BASE}/jobs/${jobId}/vehicles?sort=${encodeURIComponent(sort)}&order=${encodeURIComponent(order)}`;

@@ -127,6 +127,26 @@ export function getJob(id: string): JobRecord | null {
   };
 }
 
+// This helper lists recent jobs so UI can survive refresh and show history.
+export function listJobs(limit: number = 30): JobRecord[] {
+  // We query recent jobs ordered by creation timestamp descending.
+  const rows = db
+    .prepare(`SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?`)
+    .all(limit) as any[];
+
+  // We map rows to typed API shape.
+  return rows.map((row) => ({
+    id: row.id,
+    status: row.status as JobStatus,
+    sourcePath: row.source_path,
+    progress: row.progress,
+    artifacts: JSON.parse(row.artifacts_json),
+    errorMessage: row.error_message ?? undefined,
+    createdAt: row.created_at,
+    finishedAt: row.finished_at ?? undefined,
+  }));
+}
+
 // This helper stores leaderboard rows for one job.
 export function replaceVehicleTracks(jobId: string, tracks: VehicleTrack[]): void {
   // We remove old rows first to avoid stale data.

@@ -145,6 +145,60 @@ body {
   font-size: 0.95rem;
 }
 
+/* Recent jobs list uses vertical stack with comfortable spacing. */
+.jobs-list {
+  display: grid;
+  gap: 8px;
+  max-height: 300px;
+  overflow: auto;
+}
+
+/* Job item button style keeps history scannable and clickable. */
+.job-item {
+  border: 1px solid #dccabc;
+  border-radius: 12px;
+  background: #fffdfa;
+  padding: 10px;
+  text-align: left;
+  display: grid;
+  gap: 3px;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+/* Hover state for job rows. */
+.job-item:hover {
+  background: rgba(255, 224, 178, 0.2);
+  border-color: #d4b08d;
+}
+
+/* Active job gets stronger tint for immediate orientation. */
+.job-item-active {
+  background: rgba(14, 143, 140, 0.12);
+  border-color: rgba(14, 143, 140, 0.5);
+}
+
+/* Job id text gets monospace for easier copy/recognition. */
+.job-item-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+/* Status text keeps compact uppercase tag style. */
+.job-item-status {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #7a5f4e;
+}
+
+/* Date text is softer secondary metadata. */
+.job-item-date {
+  font-size: 0.78rem;
+  color: #816e62;
+}
+
 /* Upload form stacks fields cleanly. */
 .upload-form {
   display: grid;

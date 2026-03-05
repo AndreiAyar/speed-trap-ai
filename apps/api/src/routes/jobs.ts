@@ -11,7 +11,7 @@ import type { CreateJobRequest } from "../types/contracts.js";
 import { createAndRunJob } from "../services/jobRunner.js";
 
 // We import DB readers for status and leaderboard endpoints.
-import { getJob, getVehicleTrack, getVehicleTracks } from "../services/sqlite.js";
+import { getJob, getVehicleTrack, getVehicleTracks, listJobs } from "../services/sqlite.js";
 
 // We create isolated router instance.
 export const jobsRouter = Router();
@@ -66,6 +66,19 @@ jobsRouter.post("/jobs", (req, res) => {
 
   // We return accepted response immediately.
   return res.status(202).json({ jobId: job.id, status: job.status });
+});
+
+// Route: list recent jobs for refresh-safe dashboard history.
+jobsRouter.get("/jobs", (req, res) => {
+  // We parse optional query limit and clamp to a safe range.
+  const rawLimit = Number(req.query.limit ?? 30);
+  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 30;
+
+  // We fetch recent jobs from SQLite.
+  const jobs = listJobs(limit);
+
+  // We return job history payload.
+  return res.json({ jobs, count: jobs.length });
 });
 
 // Route: fetch one job status and artifact paths.
