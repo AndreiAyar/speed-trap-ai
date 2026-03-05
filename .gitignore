@@ -1,0 +1,27 @@
+# Node modules should never be committed.
+node_modules/
+
+# Build outputs and temporary caches should stay local.
+dist/
+build/
+.vite/
+coverage/
+
+# Python virtual environments and cache files should stay local.
+.venv/
+__pycache__/
+*.pyc
+
+# Local database and generated data are runtime artifacts.
+data/output/*
+!data/output/.gitkeep
+*.sqlite
+*.sqlite3
+
+# Editor and OS noise files are not useful in git history.
+.DS_Store
+.vscode/
+.idea/
+
+# Runtime logs should be ignored.
+*.log
