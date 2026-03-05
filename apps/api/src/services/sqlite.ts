@@ -178,6 +178,26 @@ export function replaceVehicleTracks(jobId: string, tracks: VehicleTrack[]): voi
   }
 }
 
+// This helper deletes one job and related track rows from SQLite.
+export function deleteJob(jobId: string): JobRecord | null {
+  // We fetch current job first so caller can inspect artifacts after deletion.
+  const existing = getJob(jobId);
+
+  // We return null when job does not exist.
+  if (!existing) {
+    return null;
+  }
+
+  // We delete related vehicle rows first for referential consistency.
+  db.prepare(`DELETE FROM vehicle_tracks WHERE job_id = ?`).run(jobId);
+
+  // We delete parent job row after child rows are removed.
+  db.prepare(`DELETE FROM jobs WHERE id = ?`).run(jobId);
+
+  // We return deleted job payload for optional cleanup/reporting.
+  return existing;
+}
+
 // This helper returns sorted vehicle tracks for one job.
 export function getVehicleTracks(jobId: string, sort: string = "maxSpeedKmh", order: "asc" | "desc" = "desc"): VehicleTrack[] {
   // We whitelist sortable columns to prevent SQL injection.

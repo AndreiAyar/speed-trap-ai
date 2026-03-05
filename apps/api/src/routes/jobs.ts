@@ -3,6 +3,8 @@
 // We import express router helper.
 import { Router } from "express";
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 // We import contracts for request typing.
 import type { CreateJobRequest } from "../types/contracts.js";
@@ -11,10 +13,22 @@ import type { CreateJobRequest } from "../types/contracts.js";
 import { createAndRunJob } from "../services/jobRunner.js";
 
 // We import DB readers for status and leaderboard endpoints.
-import { getJob, getVehicleTrack, getVehicleTracks, listJobs } from "../services/sqlite.js";
+import { deleteJob, getJob, getVehicleTrack, getVehicleTracks, listJobs } from "../services/sqlite.js";
 
 // We create isolated router instance.
 export const jobsRouter = Router();
+
+// We compute current file path for stable workspace root resolution.
+const currentFilePath = fileURLToPath(import.meta.url);
+
+// We compute current directory from this module file.
+const currentDir = path.dirname(currentFilePath);
+
+// We compute workspace root from source tree location.
+const workspaceRoot = path.resolve(currentDir, "../../../../");
+
+// We compute output root used for per-job artifact folders.
+const outputRoot = path.join(workspaceRoot, "data", "output");
 
 // This helper loads recent events for one track from events JSONL.
 function loadTrackEventSamples(eventsPath: string, trackId: number, maxItems: number = 25): Array<Record<string, unknown>> {
@@ -79,6 +93,37 @@ jobsRouter.get("/jobs", (req, res) => {
 
   // We return job history payload.
   return res.json({ jobs, count: jobs.length });
+});
+
+// Route: delete one job and remove its local artifact files.
+jobsRouter.delete("/jobs/:jobId", (req, res) => {
+  // We read target job id from URL parameters.
+  const { jobId } = req.params;
+
+  // We delete SQLite rows and fetch deleted payload when found.
+  const deleted = deleteJob(jobId);
+
+  // We return 404 when job was not found in DB.
+  if (!deleted) {
+    return res.status(404).json({ error: "Job not found." });
+  }
+
+  // We resolve canonical job output folder from job id.
+  const jobOutputDir = path.join(outputRoot, jobId);
+
+  // We remove full job artifact folder when present.
+  let removedOutputDir = false;
+  if (fs.existsSync(jobOutputDir)) {
+    fs.rmSync(jobOutputDir, { recursive: true, force: true });
+    removedOutputDir = true;
+  }
+
+  // We return a compact deletion summary to frontend.
+  return res.json({
+    deletedJobId: jobId,
+    removedOutputDir,
+    note: "SQLite rows deleted and local job artifacts removed.",
+  });
 });
 
 // Route: fetch one job status and artifact paths.

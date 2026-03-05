@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 // We import API helpers and typed payloads.
 import {
+  deleteJob,
   getJob,
   getJobs,
   getVehicle,
@@ -256,6 +257,38 @@ export function App() {
             setSelectedTrackId(null);
             setSelectedTrack(null);
             setError(null);
+          }}
+          onDeleteJob={(deletedJobId) => {
+            // We run async delete flow without blocking UI thread.
+            void (async () => {
+              try {
+                // We call backend deletion endpoint.
+                await deleteJob(deletedJobId);
+
+                // We reload history after successful deletion.
+                const refreshedJobs = await loadRecentJobs();
+
+                // If deleted job was active, we move context to next available job.
+                if (deletedJobId === jobId) {
+                  const nextJobId = refreshedJobs.length > 0 ? refreshedJobs[0].id : "";
+                  setJobId(nextJobId);
+
+                  // We reset stale UI state tied to removed job.
+                  setJob(null);
+                  setTracks([]);
+                  setSelectedTrackId(null);
+                  setSelectedTrack(null);
+
+                  // We clear stored active id when no jobs remain.
+                  if (!nextJobId) {
+                    window.localStorage.removeItem(ACTIVE_JOB_STORAGE_KEY);
+                  }
+                }
+              } catch (err) {
+                // We expose readable error when deletion fails.
+                setError(err instanceof Error ? err.message : "Failed to delete job.");
+              }
+            })();
           }}
         />
 
