@@ -37,6 +37,9 @@ const defaultCameraConfig = path.join(workspaceRoot, "engine", "python", "config
 // We compute output root folder for job artifacts.
 const outputRoot = path.join(workspaceRoot, "data", "output");
 
+// We compute project virtualenv Python path for reliable dependency resolution.
+const projectVenvPython = path.join(workspaceRoot, "engine", "python", ".venv", "bin", "python");
+
 // This helper parses summary CSV into typed rows.
 function parseSummaryCsv(summaryCsvPath: string): VehicleTrack[] {
   // We return empty array when summary file does not exist.
@@ -164,8 +167,18 @@ async function runJobInternal(jobId: string, request: CreateJobRequest, jobOutpu
     jobOutputDir,
   ];
 
-  // We select python executable with simple default fallback.
-  const pythonBin = process.env.SPEED_TRAP_PYTHON_BIN ?? "python3";
+  // We select python executable with environment override priority.
+  let pythonBin = process.env.SPEED_TRAP_PYTHON_BIN ?? "";
+
+  // We fallback to project virtualenv Python when available.
+  if (!pythonBin && fs.existsSync(projectVenvPython)) {
+    pythonBin = projectVenvPython;
+  }
+
+  // We fallback to system python when no override and no venv are found.
+  if (!pythonBin) {
+    pythonBin = "python3";
+  }
 
   // We spawn Python pipeline process.
   const child = spawn(pythonBin, args, {
@@ -241,5 +254,25 @@ async function runJobInternal(jobId: string, request: CreateJobRequest, jobOutpu
 
     // We persist failure state.
     updateJob(failedJob);
+  });
+
+  // We also handle process spawn failures (for example invalid python path).
+  child.on("error", (error) => {
+    // We read latest job row for safe failure update.
+    const latest = getJob(jobId);
+
+    // We stop if job row is missing.
+    if (!latest) {
+      return;
+    }
+
+    // We persist explicit spawn failure message.
+    updateJob({
+      ...latest,
+      status: "failed",
+      progress: 100,
+      finishedAt: new Date().toISOString(),
+      errorMessage: `Failed to start Python engine: ${error.message}`,
+    });
   });
 }
