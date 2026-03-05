@@ -41,7 +41,7 @@ roi_polygon:
   - [1320, 620]
   - [2620, 620]
   - [2240, 2150]
-  - [560, 2150]
+  - [160, 2150]
 
 # Direction vector for expected vehicle movement (x, y).
 # Example below means mostly downward movement in frame.
