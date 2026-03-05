@@ -164,6 +164,8 @@ body {
   gap: 3px;
   cursor: pointer;
   transition: background-color 150ms ease, border-color 150ms ease;
+  position: relative;
+  padding-right: 84px;
 }
 
 /* Hover state for job rows. */
@@ -197,6 +199,37 @@ body {
 .job-item-date {
   font-size: 0.78rem;
   color: #816e62;
+}
+
+/* Delete button is hidden by default and appears on row hover/focus. */
+.job-delete-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid rgba(181, 0, 26, 0.4);
+  border-radius: 10px;
+  background: #fff6f7;
+  color: #9c0015;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 6px 9px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease, background-color 140ms ease, color 140ms ease;
+}
+
+/* Show delete button on hover for desktop and focus-within for accessibility. */
+.job-item:hover .job-delete-btn,
+.job-item:focus-within .job-delete-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Delete button hover style. */
+.job-delete-btn:hover {
+  background: #ffe6ea;
+  color: #7f0012;
 }
 
 /* Upload form stacks fields cleanly. */

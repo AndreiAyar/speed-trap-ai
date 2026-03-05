@@ -127,6 +127,14 @@ export async function getJobs(limit: number = 30): Promise<JobsListResponse> {
   return parseJsonOrThrow<JobsListResponse>(res);
 }
 
+// API call: delete one job and remove its generated artifacts.
+export async function deleteJob(jobId: string): Promise<{ deletedJobId: string; removedOutputDir: boolean }> {
+  const res = await fetch(`${API_BASE}/jobs/${jobId}`, {
+    method: "DELETE",
+  });
+  return parseJsonOrThrow<{ deletedJobId: string; removedOutputDir: boolean }>(res);
+}
+
 // API call: fetch vehicle leaderboard.
 export async function getVehicles(jobId: string, sort: string = "maxSpeedKmh", order: "asc" | "desc" = "desc"): Promise<VehiclesResponse> {
   const url = `${API_BASE}/jobs/${jobId}/vehicles?sort=${encodeURIComponent(sort)}&order=${encodeURIComponent(order)}`;
