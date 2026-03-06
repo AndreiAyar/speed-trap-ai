@@ -23,12 +23,12 @@ anchor_point: "bottom_center"
 
 # Two-line speed gate in frame coordinates (pixels).
 line_a:
-  - [0, 594]
-  - [1919, 594]
+  - [0, 545]
+  - [1919, 545]
 
 line_b:
-  - [0, 820]
-  - [1919, 820]
+  - [0, 600]
+  - [1919, 600]
 
 # Real-world distance (meters) between line A and line B.
 # You should measure this once per scene.
