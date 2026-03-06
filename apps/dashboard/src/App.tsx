@@ -21,6 +21,7 @@ import { LeaderboardTable } from "./components/LeaderboardTable";
 import { VehicleDetails } from "./components/VehicleDetails";
 import { VideoPreview } from "./components/VideoPreview";
 import { RecentJobs } from "./components/RecentJobs";
+import { LineCalibrationTool } from "./components/LineCalibrationTool";
 
 // We define localStorage key for restoring selected job after refresh.
 const ACTIVE_JOB_STORAGE_KEY = "speedTrap.activeJobId";
@@ -231,6 +232,8 @@ export function App() {
       </section>
 
       {error ? <p className="error-banner">Eroare API: {error}</p> : null}
+
+      <LineCalibrationTool suggestedUrl={overlayUrl} />
 
       <div className="layout-grid">
         <JobUpload
