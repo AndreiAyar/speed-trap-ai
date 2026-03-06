@@ -233,8 +233,6 @@ export function App() {
 
       {error ? <p className="error-banner">Eroare API: {error}</p> : null}
 
-      <LineCalibrationTool suggestedUrl={overlayUrl} />
-
       <div className="layout-grid">
         <JobUpload
           onJobCreated={(newJobId) => {
@@ -305,6 +303,8 @@ export function App() {
 
         <VehicleDetails track={selectedTrack} disclaimer={trackDisclaimer} />
       </div>
+
+      <LineCalibrationTool suggestedUrl={overlayUrl} />
     </main>
   );
 }
