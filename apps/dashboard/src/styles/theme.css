@@ -196,6 +196,13 @@ body {
   stroke-width: 2;
 }
 
+/* ROI polygon uses translucent green fill so the road zone stays visible. */
+.cal-roi-polygon {
+  fill: rgba(49, 171, 81, 0.16);
+  stroke: #31ab51;
+  stroke-width: 3;
+}
+
 /* Sidebar holds coordinates, controls, and YAML preview outside video area. */
 .calibration-sidebar {
   border: 1px solid #dccfc3;
@@ -223,10 +230,39 @@ body {
   gap: 3px;
 }
 
+/* Toggle row keeps ROI visibility control lightweight and readable. */
+.calibration-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #315a42;
+}
+
 /* Point list stacks selected values with active row highlight. */
 .calibration-points-list {
   display: grid;
   gap: 6px;
+}
+
+/* Section heading separates line coordinates from ROI polygon inputs. */
+.calibration-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #3f342d;
+}
+
+/* Secondary note style used in calibration sections. */
+.calibration-section-note {
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #5d8a67;
 }
 
 /* Point row aligns label and coordinate token. */
