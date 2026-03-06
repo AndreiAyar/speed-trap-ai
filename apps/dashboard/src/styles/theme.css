@@ -246,6 +246,30 @@ body {
   gap: 6px;
 }
 
+/* Section card keeps collapsible editors visually grouped and compact. */
+.calibration-section-card {
+  border: 1px solid #e3d8ce;
+  border-radius: 12px;
+  background: #fffdf9;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+/* Toggle button makes line and ROI editors easy to collapse and reopen. */
+.calibration-section-toggle {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+}
+
 /* Section heading separates line coordinates from ROI polygon inputs. */
 .calibration-section-heading {
   display: flex;
@@ -263,6 +287,15 @@ body {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #5d8a67;
+}
+
+/* Toggle summary text gives a clear compact open/close affordance. */
+.calibration-section-chevron {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7b6556;
 }
 
 /* Point row aligns label and coordinate token. */

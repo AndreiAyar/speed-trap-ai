@@ -78,6 +78,12 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
   // We store active selection slot where next click writes coordinates.
   const [activeSlot, setActiveSlot] = useState<SlotKey>("a1");
 
+  // We allow line editors to collapse so the preview stays more visible.
+  const [showLineSection, setShowLineSection] = useState(false);
+
+  // We allow ROI editors to collapse for the same space-saving reason.
+  const [showRoiSection, setShowRoiSection] = useState(false);
+
   // We let users hide ROI overlay while keeping ROI coordinates in the form.
   const [showRoiOverlay, setShowRoiOverlay] = useState(true);
 
@@ -455,94 +461,123 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
             ))}
           </select>
 
-          <div className="calibration-points-list">
-            {LINE_SLOT_ORDER.map((slot) => (
-              <div key={slot} className={`calibration-point-row ${activeSlot === slot ? "calibration-point-row-active" : ""}`}>
-                <span className="calibration-point-label">{SLOT_LABELS[slot]}</span>
-                <div className="calibration-point-inputs">
-                  <label className="calibration-point-input-group">
-                    <span>X</span>
-                    <input
-                      className="calibration-number-input"
-                      type="number"
-                      value={pointDrafts[slot].x}
-                      placeholder="x"
-                      onChange={(event) => updatePointDraft(slot, "x", event.target.value)}
-                      onBlur={() => commitPointAxis(slot, "x")}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          commitPointAxis(slot, "x");
-                        }
-                      }}
-                    />
-                  </label>
-                  <label className="calibration-point-input-group">
-                    <span>Y</span>
-                    <input
-                      className="calibration-number-input"
-                      type="number"
-                      value={pointDrafts[slot].y}
-                      placeholder="y"
-                      onChange={(event) => updatePointDraft(slot, "y", event.target.value)}
-                      onBlur={() => commitPointAxis(slot, "y")}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          commitPointAxis(slot, "y");
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-              </div>
-            ))}
-          </div>
+          <section className="calibration-section-card">
+            <button
+              type="button"
+              className="calibration-section-toggle"
+              onClick={() => setShowLineSection((previous) => !previous)}
+              aria-expanded={showLineSection}
+            >
+              <span className="calibration-section-heading">
+                <span>Line points</span>
+                <span className="calibration-section-note">A + B</span>
+              </span>
+              <span className="calibration-section-chevron">{showLineSection ? "Hide" : "Show"}</span>
+            </button>
 
-          <div className="calibration-section-heading">
-            <span>ROI polygon</span>
-            <span className="calibration-section-note">Green overlay</span>
-          </div>
-
-          <div className="calibration-points-list">
-            {ROI_SLOT_ORDER.map((slot) => (
-              <div key={slot} className={`calibration-point-row ${activeSlot === slot ? "calibration-point-row-active" : ""}`}>
-                <span className="calibration-point-label">{SLOT_LABELS[slot]}</span>
-                <div className="calibration-point-inputs">
-                  <label className="calibration-point-input-group">
-                    <span>X</span>
-                    <input
-                      className="calibration-number-input"
-                      type="number"
-                      value={pointDrafts[slot].x}
-                      placeholder="x"
-                      onChange={(event) => updatePointDraft(slot, "x", event.target.value)}
-                      onBlur={() => commitPointAxis(slot, "x")}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          commitPointAxis(slot, "x");
-                        }
-                      }}
-                    />
-                  </label>
-                  <label className="calibration-point-input-group">
-                    <span>Y</span>
-                    <input
-                      className="calibration-number-input"
-                      type="number"
-                      value={pointDrafts[slot].y}
-                      placeholder="y"
-                      onChange={(event) => updatePointDraft(slot, "y", event.target.value)}
-                      onBlur={() => commitPointAxis(slot, "y")}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          commitPointAxis(slot, "y");
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
+            {showLineSection ? (
+              <div className="calibration-points-list">
+                {LINE_SLOT_ORDER.map((slot) => (
+                  <div key={slot} className={`calibration-point-row ${activeSlot === slot ? "calibration-point-row-active" : ""}`}>
+                    <span className="calibration-point-label">{SLOT_LABELS[slot]}</span>
+                    <div className="calibration-point-inputs">
+                      <label className="calibration-point-input-group">
+                        <span>X</span>
+                        <input
+                          className="calibration-number-input"
+                          type="number"
+                          value={pointDrafts[slot].x}
+                          placeholder="x"
+                          onChange={(event) => updatePointDraft(slot, "x", event.target.value)}
+                          onBlur={() => commitPointAxis(slot, "x")}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              commitPointAxis(slot, "x");
+                            }
+                          }}
+                        />
+                      </label>
+                      <label className="calibration-point-input-group">
+                        <span>Y</span>
+                        <input
+                          className="calibration-number-input"
+                          type="number"
+                          value={pointDrafts[slot].y}
+                          placeholder="y"
+                          onChange={(event) => updatePointDraft(slot, "y", event.target.value)}
+                          onBlur={() => commitPointAxis(slot, "y")}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              commitPointAxis(slot, "y");
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            ) : null}
+          </section>
+
+          <section className="calibration-section-card">
+            <button
+              type="button"
+              className="calibration-section-toggle"
+              onClick={() => setShowRoiSection((previous) => !previous)}
+              aria-expanded={showRoiSection}
+            >
+              <span className="calibration-section-heading">
+                <span>ROI polygon</span>
+                <span className="calibration-section-note">Green overlay</span>
+              </span>
+              <span className="calibration-section-chevron">{showRoiSection ? "Hide" : "Show"}</span>
+            </button>
+
+            {showRoiSection ? (
+              <div className="calibration-points-list">
+                {ROI_SLOT_ORDER.map((slot) => (
+                  <div key={slot} className={`calibration-point-row ${activeSlot === slot ? "calibration-point-row-active" : ""}`}>
+                    <span className="calibration-point-label">{SLOT_LABELS[slot]}</span>
+                    <div className="calibration-point-inputs">
+                      <label className="calibration-point-input-group">
+                        <span>X</span>
+                        <input
+                          className="calibration-number-input"
+                          type="number"
+                          value={pointDrafts[slot].x}
+                          placeholder="x"
+                          onChange={(event) => updatePointDraft(slot, "x", event.target.value)}
+                          onBlur={() => commitPointAxis(slot, "x")}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              commitPointAxis(slot, "x");
+                            }
+                          }}
+                        />
+                      </label>
+                      <label className="calibration-point-input-group">
+                        <span>Y</span>
+                        <input
+                          className="calibration-number-input"
+                          type="number"
+                          value={pointDrafts[slot].y}
+                          placeholder="y"
+                          onChange={(event) => updatePointDraft(slot, "y", event.target.value)}
+                          onBlur={() => commitPointAxis(slot, "y")}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              commitPointAxis(slot, "y");
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </section>
 
           <div className="calibration-actions">
             <button type="button" className="btn-primary" onClick={copyYaml}>
