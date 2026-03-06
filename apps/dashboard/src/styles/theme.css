@@ -130,6 +130,154 @@ body {
     linear-gradient(160deg, rgba(255, 246, 233, 0.97), rgba(255, 255, 255, 0.94));
 }
 
+/* Calibration panel uses a slightly cooler gradient to separate tool context. */
+.panel-calibration {
+  background:
+    linear-gradient(160deg, rgba(236, 249, 247, 0.92), rgba(255, 255, 255, 0.95));
+}
+
+/* URL row aligns input and action in one responsive line. */
+.calibration-url-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* Main calibration layout keeps video on left and coordinates/tools outside on right. */
+.calibration-layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+/* Stage wrapper creates relative positioning context for SVG overlay. */
+.calibration-stage {
+  position: relative;
+  border: 1px solid #dbc6b6;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #131313;
+}
+
+/* Video fills stage width while preserving native aspect ratio. */
+.calibration-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 540px;
+}
+
+/* Overlay sits on top of video but does not block player controls. */
+.calibration-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+/* Visual style for Line A in calibration overlay. */
+.cal-line-a {
+  stroke: #08d9ff;
+  stroke-width: 3;
+}
+
+/* Visual style for Line B in calibration overlay. */
+.cal-line-b {
+  stroke: #ffb10a;
+  stroke-width: 3;
+}
+
+/* Endpoint marker style for clicked points. */
+.cal-point {
+  fill: #fff;
+  stroke: #16110f;
+  stroke-width: 2;
+}
+
+/* Sidebar holds coordinates, controls, and YAML preview outside video area. */
+.calibration-sidebar {
+  border: 1px solid #dccfc3;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+/* Metric grid keeps quick coordinate values compact and readable. */
+.calibration-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/* Metric card style mirrors overall design language. */
+.calibration-metric {
+  border: 1px solid #e3d7cc;
+  border-radius: 10px;
+  padding: 8px;
+  background: #fffefc;
+  display: grid;
+  gap: 3px;
+}
+
+/* Point list stacks selected values with active row highlight. */
+.calibration-points-list {
+  display: grid;
+  gap: 6px;
+}
+
+/* Point row aligns label and coordinate token. */
+.calibration-point-row {
+  border: 1px solid #e3d8ce;
+  border-radius: 10px;
+  padding: 7px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+  background: #fffdf9;
+}
+
+/* Active slot row gets stronger border tint. */
+.calibration-point-row-active {
+  border-color: rgba(14, 143, 140, 0.7);
+  background: rgba(14, 143, 140, 0.1);
+}
+
+/* Action row aligns copy/clear buttons. */
+.calibration-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Secondary button style for neutral tool actions. */
+.btn-secondary {
+  border: 1px solid #bca994;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fff6ea;
+  color: #5a4538;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* YAML preview uses monospace and subtle background for copy confidence. */
+.calibration-yaml-preview {
+  margin: 0;
+  border: 1px solid #decfbf;
+  border-radius: 10px;
+  background: #fffdf8;
+  padding: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
 /* Panel title style for section hierarchy. */
 .panel-title {
   margin: 0;
@@ -407,6 +555,14 @@ body {
   }
 
   .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calibration-url-row {
+    grid-template-columns: 1fr;
+  }
+
+  .calibration-layout {
     grid-template-columns: 1fr;
   }
 }
