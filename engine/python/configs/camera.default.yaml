@@ -32,7 +32,7 @@ line_b:
 
 # Real-world distance (meters) between line A and line B.
 # You should measure this once per scene.
-distance_meters: 40.25
+distance_meters: 12.5
 # ROI (Region of Interest) - Defines a polygonal area within the video frame where analysis should be performed.
 # Only objects and events detected within this polygon will be processed by the detection engine.
 # Leave empty to analyze the entire video frame without spatial restrictions.

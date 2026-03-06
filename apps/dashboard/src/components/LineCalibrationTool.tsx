@@ -15,7 +15,7 @@ interface Point {
 }
 
 // Slot keys represent the four required line endpoints.
-type SlotKey = "a1" | "a2" | "b1" | "b2";
+type SlotKey = "a1" | "a2" | "b1" | "b2" | "r1" | "r2" | "r3" | "r4";
 
 // We keep labels centralized for UI text and ordering.
 const SLOT_LABELS: Record<SlotKey, string> = {
@@ -23,10 +23,20 @@ const SLOT_LABELS: Record<SlotKey, string> = {
   a2: "Linia A - punct 2",
   b1: "Linia B - punct 1",
   b2: "Linia B - punct 2",
+  r1: "ROI - punct 1",
+  r2: "ROI - punct 2",
+  r3: "ROI - punct 3",
+  r4: "ROI - punct 4",
 };
 
 // This ordered array defines auto-advance behavior after each click.
-const SLOT_ORDER: SlotKey[] = ["a1", "a2", "b1", "b2"];
+const LINE_SLOT_ORDER: SlotKey[] = ["a1", "a2", "b1", "b2"];
+
+// This ordered array defines ROI point ordering for polygon drawing.
+const ROI_SLOT_ORDER: SlotKey[] = ["r1", "r2", "r3", "r4"];
+
+// This ordered array defines auto-advance behavior after each click.
+const SLOT_ORDER: SlotKey[] = [...LINE_SLOT_ORDER, ...ROI_SLOT_ORDER];
 
 // We use a practical local sample path when no suggested URL exists yet.
 const DEFAULT_CALIBRATION_PATH = "/Users/ayar/Personal Dev/speed-trap-ai/data/input/sample.mp4";
@@ -60,12 +70,19 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
   // We store active selection slot where next click writes coordinates.
   const [activeSlot, setActiveSlot] = useState<SlotKey>("a1");
 
+  // We let users hide ROI overlay while keeping ROI coordinates in the form.
+  const [showRoiOverlay, setShowRoiOverlay] = useState(true);
+
   // We store selected points for both lines.
   const [points, setPoints] = useState<Record<SlotKey, Point | null>>({
     a1: null,
     a2: null,
     b1: null,
     b2: null,
+    r1: null,
+    r2: null,
+    r3: null,
+    r4: null,
   });
 
   // We hold ref to video element for metadata and size reads.
@@ -202,7 +219,7 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
 
   // This helper clears all selected points in one action.
   const clearPoints = () => {
-    setPoints({ a1: null, a2: null, b1: null, b2: null });
+    setPoints({ a1: null, a2: null, b1: null, b2: null, r1: null, r2: null, r3: null, r4: null });
     setActiveSlot("a1");
   };
 
@@ -210,7 +227,10 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
   const yamlSnippet = useMemo(() => {
     const lineA = points.a1 && points.a2 ? `line_a:\n  - [${points.a1.x}, ${points.a1.y}]\n  - [${points.a2.x}, ${points.a2.y}]` : "line_a:\n  - [x1, y1]\n  - [x2, y2]";
     const lineB = points.b1 && points.b2 ? `line_b:\n  - [${points.b1.x}, ${points.b1.y}]\n  - [${points.b2.x}, ${points.b2.y}]` : "line_b:\n  - [x1, y1]\n  - [x2, y2]";
-    return `${lineA}\n\n${lineB}`;
+    const roiPolygon = ROI_SLOT_ORDER.every((slot) => points[slot])
+      ? `roi_polygon:\n  - [${points.r1!.x}, ${points.r1!.y}]\n  - [${points.r2!.x}, ${points.r2!.y}]\n  - [${points.r3!.x}, ${points.r3!.y}]\n  - [${points.r4!.x}, ${points.r4!.y}]`
+      : "roi_polygon:\n  - [x1, y1]\n  - [x2, y2]\n  - [x3, y3]\n  - [x4, y4]";
+    return `${lineA}\n\n${lineB}\n\n${roiPolygon}`;
   }, [points]);
 
   // This helper copies generated YAML to clipboard when available.
@@ -240,7 +260,16 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
     a2: nativeToDisplay(points.a2),
     b1: nativeToDisplay(points.b1),
     b2: nativeToDisplay(points.b2),
+    r1: nativeToDisplay(points.r1),
+    r2: nativeToDisplay(points.r2),
+    r3: nativeToDisplay(points.r3),
+    r4: nativeToDisplay(points.r4),
   };
+
+  // We prepare ROI polygon SVG points only when all four ROI corners are set.
+  const roiDisplayPolygon = ROI_SLOT_ORDER.every((slot) => displayPoints[slot])
+    ? ROI_SLOT_ORDER.map((slot) => `${displayPoints[slot]!.x},${displayPoints[slot]!.y}`).join(" ")
+    : "";
 
   // We render full calibration panel.
   return (
@@ -302,6 +331,9 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
           />
 
           <svg className="calibration-overlay" width={displaySize.width} height={displaySize.height}>
+            {showRoiOverlay && roiDisplayPolygon ? (
+              <polygon points={roiDisplayPolygon} className="cal-roi-polygon" />
+            ) : null}
             {displayPoints.a1 && displayPoints.a2 ? (
               <line x1={displayPoints.a1.x} y1={displayPoints.a1.y} x2={displayPoints.a2.x} y2={displayPoints.a2.y} className="cal-line-a" />
             ) : null}
@@ -334,6 +366,15 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
             </div>
           </div>
 
+          <label className="calibration-toggle-row">
+            <input
+              type="checkbox"
+              checked={showRoiOverlay}
+              onChange={(event) => setShowRoiOverlay(event.target.checked)}
+            />
+            <span>Show ROI overlay</span>
+          </label>
+
           <label className="field-label" htmlFor="slotSelect">
             Active slot (next click)
           </label>
@@ -351,7 +392,42 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
           </select>
 
           <div className="calibration-points-list">
-            {SLOT_ORDER.map((slot) => (
+            {LINE_SLOT_ORDER.map((slot) => (
+              <div key={slot} className={`calibration-point-row ${activeSlot === slot ? "calibration-point-row-active" : ""}`}>
+                <span className="calibration-point-label">{SLOT_LABELS[slot]}</span>
+                <div className="calibration-point-inputs">
+                  <label className="calibration-point-input-group">
+                    <span>X</span>
+                    <input
+                      className="calibration-number-input"
+                      type="number"
+                      value={points[slot]?.x ?? ""}
+                      placeholder="x"
+                      onChange={(event) => updatePointAxis(slot, "x", event.target.value)}
+                    />
+                  </label>
+                  <label className="calibration-point-input-group">
+                    <span>Y</span>
+                    <input
+                      className="calibration-number-input"
+                      type="number"
+                      value={points[slot]?.y ?? ""}
+                      placeholder="y"
+                      onChange={(event) => updatePointAxis(slot, "y", event.target.value)}
+                    />
+                  </label>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="calibration-section-heading">
+            <span>ROI polygon</span>
+            <span className="calibration-section-note">Green overlay</span>
+          </div>
+
+          <div className="calibration-points-list">
+            {ROI_SLOT_ORDER.map((slot) => (
               <div key={slot} className={`calibration-point-row ${activeSlot === slot ? "calibration-point-row-active" : ""}`}>
                 <span className="calibration-point-label">{SLOT_LABELS[slot]}</span>
                 <div className="calibration-point-inputs">
