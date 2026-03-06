@@ -71,6 +71,40 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
   // We hold ref to stage wrapper where pointer events are captured.
   const stageRef = useRef<HTMLDivElement | null>(null);
 
+  // This helper updates one axis of one point from manual numeric input.
+  const updatePointAxis = (slot: SlotKey, axis: keyof Point, rawValue: string) => {
+    // We parse user input as integer pixel coordinate.
+    const parsedValue = Number.parseInt(rawValue, 10);
+
+    // We ignore invalid intermediate text values.
+    if (!Number.isFinite(parsedValue)) {
+      setPoints((previous) => ({
+        ...previous,
+        [slot]: previous[slot],
+      }));
+      return;
+    }
+
+    // We clamp values to loaded video bounds when metadata is available.
+    const maxX = Math.max(videoSize.width - 1, 0);
+    const maxY = Math.max(videoSize.height - 1, 0);
+    const clampedValue = axis === "x"
+      ? Math.min(Math.max(parsedValue, 0), maxX || parsedValue)
+      : Math.min(Math.max(parsedValue, 0), maxY || parsedValue);
+
+    // We create missing point object on first manual edit.
+    setPoints((previous) => {
+      const existingPoint = previous[slot] ?? { x: 0, y: 0 };
+      return {
+        ...previous,
+        [slot]: {
+          ...existingPoint,
+          [axis]: clampedValue,
+        },
+      };
+    });
+  };
+
   // We update input/video URL when parent suggestion changes and input is empty.
   useEffect(() => {
     if (suggestedUrl && !inputUrl) {
@@ -225,6 +259,11 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
           className="btn-primary"
           onClick={() => {
             setLoadError(null);
+            // We reset paused preview state before loading a new source.
+            if (videoRef.current) {
+              videoRef.current.pause();
+              videoRef.current.currentTime = 0;
+            }
             setVideoUrl(toCalibrationVideoUrl(inputUrl));
           }}
         >
@@ -245,10 +284,14 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
             className="calibration-video"
             src={videoUrl || undefined}
             controls
+            preload="metadata"
             onLoadedMetadata={(event) => {
               const video = event.currentTarget;
               setVideoSize({ width: video.videoWidth, height: video.videoHeight });
               setDisplaySize({ width: video.clientWidth, height: video.clientHeight });
+              // We keep preview paused at the beginning until user presses play.
+              video.pause();
+              video.currentTime = 0;
             }}
             onError={() => {
               setLoadError("Video could not be loaded. Check URL and server availability.");
@@ -307,8 +350,29 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
           <div className="calibration-points-list">
             {SLOT_ORDER.map((slot) => (
               <div key={slot} className={`calibration-point-row ${activeSlot === slot ? "calibration-point-row-active" : ""}`}>
-                <span>{SLOT_LABELS[slot]}</span>
-                <code>{points[slot] ? `[${points[slot]!.x}, ${points[slot]!.y}]` : "[not set]"}</code>
+                <span className="calibration-point-label">{SLOT_LABELS[slot]}</span>
+                <div className="calibration-point-inputs">
+                  <label className="calibration-point-input-group">
+                    <span>X</span>
+                    <input
+                      className="calibration-number-input"
+                      type="number"
+                      value={points[slot]?.x ?? ""}
+                      placeholder="x"
+                      onChange={(event) => updatePointAxis(slot, "x", event.target.value)}
+                    />
+                  </label>
+                  <label className="calibration-point-input-group">
+                    <span>Y</span>
+                    <input
+                      className="calibration-number-input"
+                      type="number"
+                      value={points[slot]?.y ?? ""}
+                      placeholder="y"
+                      onChange={(event) => updatePointAxis(slot, "y", event.target.value)}
+                    />
+                  </label>
+                </div>
               </div>
             ))}
           </div>
