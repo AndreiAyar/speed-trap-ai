@@ -21,6 +21,9 @@ conf_threshold: 0.25
 # - center is available for debugging/comparison.
 anchor_point: "bottom_center"
 
+# Draw a small marker on the exact anchor point used for line crossing.
+show_anchor_point: true
+
 # Two-line speed gate in frame coordinates (pixels).
 line_a:
   - [0, 545]
