@@ -234,9 +234,7 @@ body {
   border: 1px solid #e3d8ce;
   border-radius: 10px;
   padding: 7px 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: 8px;
   font-size: 0.85rem;
   background: #fffdf9;
@@ -246,6 +244,39 @@ body {
 .calibration-point-row-active {
   border-color: rgba(14, 143, 140, 0.7);
   background: rgba(14, 143, 140, 0.1);
+}
+
+/* Point label gets slightly stronger emphasis than numeric inputs. */
+.calibration-point-label {
+  font-weight: 700;
+}
+
+/* Input row keeps X/Y editors aligned cleanly. */
+.calibration-point-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/* Each axis group stacks label and field compactly. */
+.calibration-point-input-group {
+  display: grid;
+  gap: 4px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #755f50;
+}
+
+/* Numeric coordinate input stays compact and precise. */
+.calibration-number-input {
+  width: 100%;
+  border: 1px solid #cdbdaf;
+  border-radius: 8px;
+  padding: 8px 9px;
+  background: #fffefb;
+  color: var(--ink-0);
+  font-size: 0.86rem;
 }
 
 /* Action row aligns copy/clear buttons. */
