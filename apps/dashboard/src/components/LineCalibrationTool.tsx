@@ -14,6 +14,14 @@ interface Point {
   y: number;
 }
 
+// Draft input state keeps manual text editing smooth before commit.
+interface PointDraft {
+  // Draft horizontal coordinate as plain text.
+  x: string;
+  // Draft vertical coordinate as plain text.
+  y: string;
+}
+
 // Slot keys represent the four required line endpoints.
 type SlotKey = "a1" | "a2" | "b1" | "b2" | "r1" | "r2" | "r3" | "r4";
 
@@ -85,22 +93,55 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
     r4: null,
   });
 
+  // We keep editable string drafts separate from committed numeric points.
+  const [pointDrafts, setPointDrafts] = useState<Record<SlotKey, PointDraft>>({
+    a1: { x: "", y: "" },
+    a2: { x: "", y: "" },
+    b1: { x: "", y: "" },
+    b2: { x: "", y: "" },
+    r1: { x: "", y: "" },
+    r2: { x: "", y: "" },
+    r3: { x: "", y: "" },
+    r4: { x: "", y: "" },
+  });
+
   // We hold ref to video element for metadata and size reads.
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // We hold ref to stage wrapper where pointer events are captured.
   const stageRef = useRef<HTMLDivElement | null>(null);
 
-  // This helper updates one axis of one point from manual numeric input.
-  const updatePointAxis = (slot: SlotKey, axis: keyof Point, rawValue: string) => {
+  // This helper writes text drafts without forcing immediate numeric parsing.
+  const updatePointDraft = (slot: SlotKey, axis: keyof Point, rawValue: string) => {
+    setPointDrafts((previous) => ({
+      ...previous,
+      [slot]: {
+        ...previous[slot],
+        [axis]: rawValue,
+      },
+    }));
+  };
+
+  // This helper commits one draft axis into numeric state on blur/enter.
+  const commitPointAxis = (slot: SlotKey, axis: keyof Point) => {
+    const rawValue = pointDrafts[slot][axis].trim();
+
+    // We allow blank draft to keep field empty until user decides next value.
+    if (!rawValue) {
+      return;
+    }
+
     // We parse user input as integer pixel coordinate.
     const parsedValue = Number.parseInt(rawValue, 10);
 
-    // We ignore invalid intermediate text values.
+    // We ignore invalid strings and restore current committed value text.
     if (!Number.isFinite(parsedValue)) {
-      setPoints((previous) => ({
+      setPointDrafts((previous) => ({
         ...previous,
-        [slot]: previous[slot],
+        [slot]: {
+          ...previous[slot],
+          [axis]: points[slot] ? String(points[slot]![axis]) : "",
+        },
       }));
       return;
     }
@@ -112,7 +153,7 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
       ? Math.min(Math.max(parsedValue, 0), maxX || parsedValue)
       : Math.min(Math.max(parsedValue, 0), maxY || parsedValue);
 
-    // We create missing point object on first manual edit.
+    // We create missing point object on first manual commit.
     setPoints((previous) => {
       const existingPoint = previous[slot] ?? { x: 0, y: 0 };
       return {
@@ -123,6 +164,15 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
         },
       };
     });
+
+    // We normalize draft text to committed clamped value.
+    setPointDrafts((previous) => ({
+      ...previous,
+      [slot]: {
+        ...previous[slot],
+        [axis]: String(clampedValue),
+      },
+    }));
   };
 
   // We optionally auto-load suggested URL only while input still matches the default sample path.
@@ -132,6 +182,20 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
       setVideoUrl(toCalibrationVideoUrl(suggestedUrl));
     }
   }, [inputUrl, suggestedUrl, videoUrl]);
+
+  // We keep draft strings aligned with committed point changes from clicks/clear.
+  useEffect(() => {
+    setPointDrafts({
+      a1: { x: points.a1 ? String(points.a1.x) : "", y: points.a1 ? String(points.a1.y) : "" },
+      a2: { x: points.a2 ? String(points.a2.x) : "", y: points.a2 ? String(points.a2.y) : "" },
+      b1: { x: points.b1 ? String(points.b1.x) : "", y: points.b1 ? String(points.b1.y) : "" },
+      b2: { x: points.b2 ? String(points.b2.x) : "", y: points.b2 ? String(points.b2.y) : "" },
+      r1: { x: points.r1 ? String(points.r1.x) : "", y: points.r1 ? String(points.r1.y) : "" },
+      r2: { x: points.r2 ? String(points.r2.x) : "", y: points.r2 ? String(points.r2.y) : "" },
+      r3: { x: points.r3 ? String(points.r3.x) : "", y: points.r3 ? String(points.r3.y) : "" },
+      r4: { x: points.r4 ? String(points.r4.x) : "", y: points.r4 ? String(points.r4.y) : "" },
+    });
+  }, [points]);
 
   // We keep displayed size in sync with responsive video element resizing.
   useEffect(() => {
@@ -401,9 +465,15 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
                     <input
                       className="calibration-number-input"
                       type="number"
-                      value={points[slot]?.x ?? ""}
+                      value={pointDrafts[slot].x}
                       placeholder="x"
-                      onChange={(event) => updatePointAxis(slot, "x", event.target.value)}
+                      onChange={(event) => updatePointDraft(slot, "x", event.target.value)}
+                      onBlur={() => commitPointAxis(slot, "x")}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          commitPointAxis(slot, "x");
+                        }
+                      }}
                     />
                   </label>
                   <label className="calibration-point-input-group">
@@ -411,9 +481,15 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
                     <input
                       className="calibration-number-input"
                       type="number"
-                      value={points[slot]?.y ?? ""}
+                      value={pointDrafts[slot].y}
                       placeholder="y"
-                      onChange={(event) => updatePointAxis(slot, "y", event.target.value)}
+                      onChange={(event) => updatePointDraft(slot, "y", event.target.value)}
+                      onBlur={() => commitPointAxis(slot, "y")}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          commitPointAxis(slot, "y");
+                        }
+                      }}
                     />
                   </label>
                 </div>
@@ -436,9 +512,15 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
                     <input
                       className="calibration-number-input"
                       type="number"
-                      value={points[slot]?.x ?? ""}
+                      value={pointDrafts[slot].x}
                       placeholder="x"
-                      onChange={(event) => updatePointAxis(slot, "x", event.target.value)}
+                      onChange={(event) => updatePointDraft(slot, "x", event.target.value)}
+                      onBlur={() => commitPointAxis(slot, "x")}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          commitPointAxis(slot, "x");
+                        }
+                      }}
                     />
                   </label>
                   <label className="calibration-point-input-group">
@@ -446,9 +528,15 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
                     <input
                       className="calibration-number-input"
                       type="number"
-                      value={points[slot]?.y ?? ""}
+                      value={pointDrafts[slot].y}
                       placeholder="y"
-                      onChange={(event) => updatePointAxis(slot, "y", event.target.value)}
+                      onChange={(event) => updatePointDraft(slot, "y", event.target.value)}
+                      onBlur={() => commitPointAxis(slot, "y")}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          commitPointAxis(slot, "y");
+                        }
+                      }}
                     />
                   </label>
                 </div>
