@@ -23,12 +23,12 @@ anchor_point: "bottom_center"
 
 # Two-line speed gate in frame coordinates (pixels).
 line_a:
-  - [0, 1020]
-  - [3839, 1020]
+  - [0, 594]
+  - [1919, 594]
 
 line_b:
-  - [0, 1220]
-  - [3839, 1220]
+  - [0, 820]
+  - [1919, 820]
 
 # Real-world distance (meters) between line A and line B.
 # You should measure this once per scene.
@@ -43,10 +43,10 @@ distance_meters: 40.25
 # If empty, full frame is used.
 roi_polygon:
   # ROI tuned for monitored carriageway (vehicles approaching camera) in 3840x2160 frame.
-  - [1320, 620]
-  - [2620, 620]
-  - [2240, 2150]
-  - [60, 2150]
+  # - [1320, 620]
+  # - [2620, 620]
+  # - [2240, 2150]
+  # - [60, 2150]
 
 # Direction vector for expected vehicle movement (x, y).
 # Example below means mostly downward movement in frame.
