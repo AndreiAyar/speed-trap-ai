@@ -234,6 +234,9 @@ def main():
     trail_length_frames = int(cfg.get("trail_length_frames", 22))
     trail_thickness = int(cfg.get("trail_thickness", 2))
 
+    # We read anchor-point debug overlay flag from scene config.
+    show_anchor_point = bool(cfg.get("show_anchor_point", True))
+
     # We iterate tracked frames from detector/tracker pipeline.
     for item in iter_tracked_frames(
         source_path=args.input,
@@ -353,6 +356,17 @@ def main():
                     isClosed=False,
                     color=(255, 230, 90),
                     thickness=trail_thickness,
+                    lineType=cv2.LINE_AA,
+                )
+
+            # We draw the exact anchor point used for line-crossing math.
+            if show_anchor_point:
+                cv2.circle(
+                    frame,
+                    (int(center[0]), int(center[1])),
+                    5,
+                    (40, 40, 255),
+                    thickness=-1,
                     lineType=cv2.LINE_AA,
                 )
 
