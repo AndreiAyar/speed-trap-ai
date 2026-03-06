@@ -168,3 +168,26 @@ export function toArtifactUrl(absolutePath: string): string {
   // We return final public URL.
   return `${ARTIFACT_BASE}/${relative}`;
 }
+
+// Helper converts user input into a browser-playable calibration video source.
+export function toCalibrationVideoUrl(input: string): string {
+  // We trim user input before detection/conversion.
+  const trimmedInput = input.trim();
+
+  // We return empty string when input is blank.
+  if (!trimmedInput) {
+    return "";
+  }
+
+  // We keep already-playable HTTP(S) and blob URLs unchanged.
+  if (
+    trimmedInput.startsWith("http://") ||
+    trimmedInput.startsWith("https://") ||
+    trimmedInput.startsWith("blob:")
+  ) {
+    return trimmedInput;
+  }
+
+  // We convert local filesystem paths into API-served preview URLs.
+  return `${API_BASE}/local-video?path=${encodeURIComponent(trimmedInput)}`;
+}

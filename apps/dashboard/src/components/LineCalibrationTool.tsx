@@ -3,6 +3,9 @@
 // React hooks manage local tool state and DOM measurements.
 import { useEffect, useMemo, useRef, useState } from "react";
 
+// API helper converts local paths into browser-playable preview URLs.
+import { toCalibrationVideoUrl } from "../lib/api";
+
 // We define a simple point type used by all calibration logic.
 interface Point {
   // Horizontal coordinate in native video pixels.
@@ -25,9 +28,9 @@ const SLOT_LABELS: Record<SlotKey, string> = {
 // This ordered array defines auto-advance behavior after each click.
 const SLOT_ORDER: SlotKey[] = ["a1", "a2", "b1", "b2"];
 
-// Component props allow parent to suggest a default video URL.
+// Component props allow parent to suggest a default video URL or local path.
 interface LineCalibrationToolProps {
-  // Optional pre-filled URL from processed job artifacts.
+  // Optional pre-filled URL/path from processed job artifacts.
   suggestedUrl?: string;
 }
 
@@ -36,8 +39,8 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
   // We keep current text input state for URL editing.
   const [inputUrl, setInputUrl] = useState(suggestedUrl);
 
-  // We keep actively loaded URL used by video element src.
-  const [videoUrl, setVideoUrl] = useState(suggestedUrl);
+  // We keep actively loaded browser-playable src used by video element.
+  const [videoUrl, setVideoUrl] = useState(toCalibrationVideoUrl(suggestedUrl));
 
   // We store optional playback/loading error for user feedback.
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -72,7 +75,7 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
   useEffect(() => {
     if (suggestedUrl && !inputUrl) {
       setInputUrl(suggestedUrl);
-      setVideoUrl(suggestedUrl);
+      setVideoUrl(toCalibrationVideoUrl(suggestedUrl));
     }
   }, [suggestedUrl, inputUrl]);
 
@@ -207,7 +210,7 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
     <section className="panel panel-calibration">
       <h2 className="panel-title">Line Calibration Tool (A/B)</h2>
       <p className="panel-subtitle">
-        Paste a video URL, click on frame to set endpoints, and copy YAML coordinates for `line_a` and `line_b`.
+        Paste a local video path or URL, click on frame to set endpoints, and copy YAML coordinates for `line_a` and `line_b`.
       </p>
 
       <div className="calibration-url-row">
@@ -215,17 +218,17 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
           className="field-input"
           value={inputUrl}
           onChange={(event) => setInputUrl(event.target.value)}
-          placeholder="http://localhost:8787/artifacts/job_xxx/overlay.mp4"
+          placeholder="data/input/3.mp4"
         />
         <button
           type="button"
           className="btn-primary"
           onClick={() => {
             setLoadError(null);
-            setVideoUrl(inputUrl.trim());
+            setVideoUrl(toCalibrationVideoUrl(inputUrl));
           }}
         >
-          Load URL
+          Load Video
         </button>
       </div>
 

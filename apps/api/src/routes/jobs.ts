@@ -60,6 +60,41 @@ function loadTrackEventSamples(eventsPath: string, trackId: number, maxItems: nu
   return rows.slice(-maxItems);
 }
 
+// This helper validates local video path before we stream it to the browser.
+function resolveSafeVideoPath(inputPath: string): string | null {
+  // We trim whitespace to avoid accidental copy/paste issues.
+  const trimmedPath = inputPath.trim();
+
+  // We reject empty values immediately.
+  if (!trimmedPath) {
+    return null;
+  }
+
+  // We resolve relative paths from workspace root and keep absolute paths unchanged.
+  const resolvedPath = path.isAbsolute(trimmedPath) ? trimmedPath : path.resolve(workspaceRoot, trimmedPath);
+
+  // We only allow files inside workspace root for safety.
+  const relativeToRoot = path.relative(workspaceRoot, resolvedPath);
+  if (relativeToRoot.startsWith("..") || path.isAbsolute(relativeToRoot)) {
+    return null;
+  }
+
+  // We require the file to exist on disk.
+  if (!fs.existsSync(resolvedPath)) {
+    return null;
+  }
+
+  // We require a video-like extension to avoid arbitrary file serving.
+  const extension = path.extname(resolvedPath).toLowerCase();
+  const allowedExtensions = new Set([".mp4", ".mov", ".m4v", ".webm"]);
+  if (!allowedExtensions.has(extension)) {
+    return null;
+  }
+
+  // We return validated absolute path.
+  return resolvedPath;
+}
+
 // Route: create new processing job.
 jobsRouter.post("/jobs", (req, res) => {
   // We parse request body into typed object.
@@ -93,6 +128,33 @@ jobsRouter.get("/jobs", (req, res) => {
 
   // We return job history payload.
   return res.json({ jobs, count: jobs.length });
+});
+
+// Route: stream local workspace video files for calibration preview.
+jobsRouter.get("/local-video", (req, res) => {
+  // We parse string query parameter from request URL.
+  const rawPath = String(req.query.path ?? "");
+
+  // We validate and resolve requested local file path.
+  const resolvedPath = resolveSafeVideoPath(rawPath);
+
+  // We reject invalid or unsafe paths.
+  if (!resolvedPath) {
+    return res.status(400).json({ error: "Invalid local video path." });
+  }
+
+  // We set a browser-friendly content type based on file extension.
+  const extension = path.extname(resolvedPath).toLowerCase();
+  const contentTypeMap: Record<string, string> = {
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".m4v": "video/x-m4v",
+    ".webm": "video/webm",
+  };
+  res.type(contentTypeMap[extension] ?? "video/mp4");
+
+  // We stream the file through Express sendFile with range support.
+  return res.sendFile(resolvedPath);
 });
 
 // Route: delete one job and remove its local artifact files.
