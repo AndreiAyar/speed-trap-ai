@@ -39,14 +39,11 @@ interface LineCalibrationToolProps {
 
 // Main calibration component used inside dashboard.
 export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolProps) {
-  // We choose either parent suggestion or local sample file as initial source.
-  const initialSource = suggestedUrl || DEFAULT_CALIBRATION_PATH;
-
   // We keep current text input state for URL editing.
-  const [inputUrl, setInputUrl] = useState(initialSource);
+  const [inputUrl, setInputUrl] = useState(DEFAULT_CALIBRATION_PATH);
 
   // We keep actively loaded browser-playable src used by video element.
-  const [videoUrl, setVideoUrl] = useState(toCalibrationVideoUrl(initialSource));
+  const [videoUrl, setVideoUrl] = useState(toCalibrationVideoUrl(DEFAULT_CALIBRATION_PATH));
 
   // We store optional playback/loading error for user feedback.
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -111,13 +108,13 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
     });
   };
 
-  // We update input/video URL when parent suggestion changes and input is empty.
+  // We optionally auto-load suggested URL only while input still matches the default sample path.
   useEffect(() => {
-    if (suggestedUrl && inputUrl === DEFAULT_CALIBRATION_PATH) {
+    if (suggestedUrl && inputUrl === DEFAULT_CALIBRATION_PATH && !videoUrl) {
       setInputUrl(suggestedUrl);
       setVideoUrl(toCalibrationVideoUrl(suggestedUrl));
     }
-  }, [suggestedUrl, inputUrl]);
+  }, [inputUrl, suggestedUrl, videoUrl]);
 
   // We keep displayed size in sync with responsive video element resizing.
   useEffect(() => {
