@@ -357,10 +357,7 @@ def main():
                 )
 
             # We build label text with track id and optional speed.
-            if gate_info.get("speed_kmh") is not None:
-                label = f"ID {track_id} | Estimare AI: {gate_info['speed_kmh']} km/h"
-            else:
-                label = f"ID {track_id} | in masurare"
+            label = f"ID {track_id} | {gate_info.get('status_label', 'status necunoscut')}"
 
             # We draw label above bounding box.
             cv2.putText(frame, label, (x1, max(20, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
@@ -379,6 +376,7 @@ def main():
                     "crossedAms": gate_info.get("crossed_a_ms"),
                     "crossedBms": gate_info.get("crossed_b_ms"),
                     "speedKmh": gate_info.get("speed_kmh"),
+                    "statusLabel": gate_info.get("status_label"),
                     "note": "Entertainment-only estimate",
                 }
             )

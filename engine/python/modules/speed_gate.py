@@ -122,7 +122,12 @@ class TwoLineSpeedGate:
         # We skip speed logic if point is outside ROI.
         if not point_in_polygon(center, self.roi_polygon):
             state.last_center = center
-            return {"track_id": track_id, "inside_roi": False, "speed_kmh": state.speed_kmh}
+            return {
+                "track_id": track_id,
+                "inside_roi": False,
+                "speed_kmh": state.speed_kmh,
+                "status_label": "in afara ROI",
+            }
 
         # We compute current side values relative to both lines.
         side_a = side_of_line(center, self.line_a)
@@ -180,6 +185,18 @@ class TwoLineSpeedGate:
         # We update last center position for motion direction estimation.
         state.last_center = center
 
+        # We build a user-facing status label for overlay clarity.
+        if state.speed_kmh is not None:
+            status_label = f"Estimare AI: {state.speed_kmh} km/h"
+        elif not moving_expected_direction and state.last_center is not None:
+            status_label = "sens opus"
+        elif state.crossed_a_ms is not None and state.crossed_b_ms is None:
+            status_label = "asteapta linia B"
+        elif state.crossed_a_ms is None:
+            status_label = "asteapta linia A"
+        else:
+            status_label = "fara crossing valid"
+
         # We return state snapshot for event writing and overlays.
         return {
             "track_id": track_id,
@@ -188,6 +205,7 @@ class TwoLineSpeedGate:
             "crossed_b_ms": state.crossed_b_ms,
             "speed_kmh": state.speed_kmh,
             "movement_projection": movement_projection,
+            "status_label": status_label,
         }
 
     # This method returns all states for final aggregation and export.
