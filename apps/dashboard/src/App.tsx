@@ -46,6 +46,12 @@ export function App() {
   // We store selected track details.
   const [selectedTrack, setSelectedTrack] = useState<VehicleTrack | null>(null);
 
+  // We store current video jump target in milliseconds for the preview player.
+  const [videoSeekTargetMs, setVideoSeekTargetMs] = useState<number | null>(null);
+
+  // We store a seek request counter so repeated clicks on same row still jump.
+  const [videoSeekRequestKey, setVideoSeekRequestKey] = useState(0);
+
   // We store note/disclaimer from track detail endpoint.
   const [trackDisclaimer, setTrackDisclaimer] = useState<string>("Estimare AI pentru divertisment.");
 
@@ -221,6 +227,22 @@ export function App() {
     return toArtifactUrl(job.artifacts.overlayVideo);
   }, [job?.artifacts?.overlayVideo]);
 
+  // We compute the most useful jump point for a selected vehicle.
+  const getTrackFocusTimestampMs = (track: VehicleTrack): number => {
+    // Best case: jump to the middle of the actual measurement window.
+    if (track.crossedAms !== null && track.crossedBms !== null) {
+      return (track.crossedAms + track.crossedBms) / 2;
+    }
+
+    // Fallback: jump to line A crossing when only the entry point exists.
+    if (track.crossedAms !== null) {
+      return track.crossedAms;
+    }
+
+    // Last fallback: jump to the first moment the tracker saw the car.
+    return track.firstSeenMs;
+  };
+
   // We render dashboard page layout.
   return (
     <main className="app-shell">
@@ -257,6 +279,7 @@ export function App() {
             setTracks([]);
             setSelectedTrackId(null);
             setSelectedTrack(null);
+            setVideoSeekTargetMs(null);
             setJob(null);
             setError(null);
             // We refresh history after creating a new job.
@@ -273,6 +296,7 @@ export function App() {
             setTracks([]);
             setSelectedTrackId(null);
             setSelectedTrack(null);
+            setVideoSeekTargetMs(null);
             setError(null);
           }}
           onDeleteJob={(deletedJobId) => {
@@ -295,6 +319,7 @@ export function App() {
                   setTracks([]);
                   setSelectedTrackId(null);
                   setSelectedTrack(null);
+                  setVideoSeekTargetMs(null);
 
                   // We clear stored active id when no jobs remain.
                   if (!nextJobId) {
@@ -309,12 +334,23 @@ export function App() {
           }}
         />
 
-        <VideoPreview videoUrl={overlayUrl} />
+        <VideoPreview
+          videoUrl={overlayUrl}
+          seekTargetMs={videoSeekTargetMs}
+          seekRequestKey={videoSeekRequestKey}
+        />
 
         <LeaderboardTable
           tracks={tracks}
           selectedTrackId={selectedTrackId}
-          onSelectTrack={(trackId) => setSelectedTrackId(trackId)}
+          onSelectTrack={(track) => {
+            // We keep details panel in sync with clicked row.
+            setSelectedTrackId(track.trackId);
+
+            // We jump preview to the most relevant moment for that vehicle.
+            setVideoSeekTargetMs(getTrackFocusTimestampMs(track));
+            setVideoSeekRequestKey((previous) => previous + 1);
+          }}
         />
 
         <VehicleDetails track={selectedTrack} disclaimer={trackDisclaimer} />
