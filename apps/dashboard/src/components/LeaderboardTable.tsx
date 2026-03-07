@@ -12,8 +12,8 @@ interface LeaderboardTableProps {
   tracks: VehicleTrack[];
   // Currently selected track id.
   selectedTrackId: number | null;
-  // Handler for row click interactions.
-  onSelectTrack: (trackId: number) => void;
+  // Handler for row click interactions, with full row for video seeking.
+  onSelectTrack: (track: VehicleTrack) => void;
 }
 
 // Table component used by main app layout.
@@ -56,7 +56,7 @@ export function LeaderboardTable({ tracks, selectedTrackId, onSelectTrack }: Lea
                 <tr
                   key={track.trackId}
                   className={isSelected ? "row-selected" : ""}
-                  onClick={() => onSelectTrack(track.trackId)}
+                  onClick={() => onSelectTrack(track)}
                 >
                   <td>{track.trackId}</td>
                   <td>{track.maxSpeedKmh ?? "-"}</td>
