@@ -126,11 +126,27 @@ export function App() {
         // We fetch leaderboard once job is complete.
         if (latestJob.status === "done") {
           const vehicles = await getVehicles(jobId, "maxSpeedKmh", "desc");
-          setTracks(vehicles.tracks);
+          // We keep only tracks that produced a final numeric speed.
+          const validSpeedTracks = vehicles.tracks.filter((track) => track.maxSpeedKmh !== null);
+          setTracks(validSpeedTracks);
 
-          // We auto-select first row for convenience.
-          if (vehicles.tracks.length > 0 && selectedTrackId === null) {
-            setSelectedTrackId(vehicles.tracks[0].trackId);
+          // We clear detail selection when no valid speeds exist for this job.
+          if (validSpeedTracks.length === 0) {
+            setSelectedTrackId(null);
+            setSelectedTrack(null);
+          }
+
+          // We auto-select the first valid row when nothing is selected yet.
+          if (validSpeedTracks.length > 0 && selectedTrackId === null) {
+            setSelectedTrackId(validSpeedTracks[0].trackId);
+          }
+
+          // We repair selection when previously selected row no longer exists after filtering.
+          if (
+            selectedTrackId !== null &&
+            !validSpeedTracks.some((track) => track.trackId === selectedTrackId)
+          ) {
+            setSelectedTrackId(validSpeedTracks[0]?.trackId ?? null);
           }
         }
 

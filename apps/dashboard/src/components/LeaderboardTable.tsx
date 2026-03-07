@@ -26,7 +26,7 @@ export function LeaderboardTable({ tracks, selectedTrackId, onSelectTrack }: Lea
     return (
       <section className="panel">
         <h2 className="panel-title">Top viteze detectate</h2>
-        <p className="panel-subtitle">Nu exista date inca. Finalizeaza un job pentru a vedea clasamentul.</p>
+        <p className="panel-subtitle">Nu exista viteze valide inca. Finalizeaza un job sau ajusteaza liniile/ROI pentru a vedea clasamentul.</p>
       </section>
     );
   }
@@ -35,7 +35,7 @@ export function LeaderboardTable({ tracks, selectedTrackId, onSelectTrack }: Lea
   return (
     <section className="panel">
       <h2 className="panel-title">Top viteze detectate</h2>
-      <p className="panel-subtitle">Sortat descrescator dupa viteza maxima estimata.</p>
+      <p className="panel-subtitle">Se afiseaza doar track-urile cu viteza valida, sortate descrescator dupa viteza maxima estimata.</p>
 
       <div className="table-wrap">
         <table className="leaderboard-table">
