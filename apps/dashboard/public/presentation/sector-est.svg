@@ -1,0 +1,49 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" fill="#1D2A30"/>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <path d="M360 0H1240L1125 900H475L360 0Z" fill="#39474C"/>
+  <path d="M650 0H950L910 900H690L650 0Z" fill="#4A585C"/>
+  <path d="M250 0H360L475 900H360L250 0Z" fill="#2E393D"/>
+  <path d="M1240 0H1350L1240 900H1125L1240 0Z" fill="#2E393D"/>
+  <g opacity="0.55" stroke="#E9E6DB" stroke-width="10" stroke-dasharray="28 34">
+    <path d="M560 0L650 900"/>
+    <path d="M785 0L800 900"/>
+    <path d="M1010 0L950 900"/>
+  </g>
+  <g opacity="0.3">
+    <rect x="0" y="0" width="1600" height="220" fill="url(#sky)"/>
+    <rect x="0" y="740" width="1600" height="160" fill="url(#roadGlow)"/>
+  </g>
+  <g>
+    <rect x="610" y="610" width="110" height="170" rx="30" fill="#E8F1F8"/>
+    <rect x="760" y="520" width="96" height="150" rx="28" fill="#D8443E"/>
+    <rect x="900" y="620" width="108" height="176" rx="30" fill="#0E0F14"/>
+    <rect x="486" y="520" width="90" height="148" rx="26" fill="#20272C"/>
+    <rect x="720" y="298" width="72" height="120" rx="22" fill="#F0C248"/>
+    <rect x="870" y="340" width="74" height="126" rx="24" fill="#E2E7EB"/>
+    <rect x="560" y="350" width="76" height="130" rx="24" fill="#F7F9FC"/>
+    <rect x="988" y="430" width="82" height="136" rx="24" fill="#34A0D9"/>
+    <rect x="432" y="650" width="112" height="178" rx="30" fill="#F8FBFF"/>
+    <rect x="1040" y="690" width="112" height="182" rx="30" fill="#F5F7FA"/>
+  </g>
+  <g opacity="0.85">
+    <rect x="130" y="60" width="170" height="18" rx="9" fill="#5C7C60"/>
+    <rect x="1280" y="120" width="190" height="20" rx="10" fill="#54819A"/>
+    <rect x="1180" y="170" width="120" height="14" rx="7" fill="#5E6F7B"/>
+  </g>
+  <defs>
+    <linearGradient id="bg" x1="800" y1="0" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#325159"/>
+      <stop offset="0.52" stop-color="#24343A"/>
+      <stop offset="1" stop-color="#111519"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="800" y1="0" x2="800" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5C9A8D"/>
+      <stop offset="1" stop-color="#5C9A8D" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="roadGlow" x1="800" y1="740" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6A54B" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#F6A54B" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>
