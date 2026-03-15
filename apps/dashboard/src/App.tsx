@@ -22,12 +22,24 @@ import { VehicleDetails } from "./components/VehicleDetails";
 import { VideoPreview } from "./components/VideoPreview";
 import { RecentJobs } from "./components/RecentJobs";
 import { LineCalibrationTool } from "./components/LineCalibrationTool";
+import { PresentationPage } from "./PresentationPage";
 
 // We define localStorage key for restoring selected job after refresh.
 const ACTIVE_JOB_STORAGE_KEY = "speedTrap.activeJobId";
 
-// App component is the top-level screen.
+// App component selects the correct top-level screen based on pathname.
 export function App() {
+  // We expose a dedicated presentation route without pulling in a router dependency.
+  if (window.location.pathname.startsWith("/presentation")) {
+    return <PresentationPage />;
+  }
+
+  // We keep the existing operational dashboard available on every other route.
+  return <DashboardPage />;
+}
+
+// Dashboard page contains the original upload + leaderboard workflow.
+function DashboardPage() {
   // We store currently active job id from upload action or history click.
   const [jobId, setJobId] = useState<string>("");
 

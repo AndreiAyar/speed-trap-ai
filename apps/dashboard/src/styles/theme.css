@@ -632,6 +632,597 @@ body {
   font-weight: 600;
 }
 
+/* Presentation route swaps the soft dashboard theme for a darker broadcast mood. */
+body[data-view="presentation"] {
+  color: #f2eee6;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(255, 122, 0, 0.22), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(111, 191, 166, 0.18), transparent 24%),
+    linear-gradient(180deg, #071017 0%, #0a151d 48%, #050a0f 100%);
+}
+
+/* Presentation shell uses wider proportions so it reads well in recorded demos. */
+.presentation-shell {
+  width: min(1460px, 96vw);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 26px 0 38px;
+  display: grid;
+  gap: 18px;
+}
+
+/* Hero aligns large title copy with the always-visible legal disclaimer. */
+.presentation-hero {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* Main copy card creates a bold editorial opening frame. */
+.presentation-hero-copy,
+.presentation-disclaimer-card,
+.presentation-metric-card,
+.presentation-priority-card,
+.presentation-hotlist-card,
+.presentation-feed-card,
+.presentation-sector-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 26px;
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.32);
+  background:
+    linear-gradient(180deg, rgba(18, 27, 34, 0.95), rgba(7, 12, 18, 0.96));
+  animation: reveal 520ms ease-out both;
+}
+
+/* Shared top sheen keeps cards feeling more premium on camera. */
+.presentation-hero-copy::before,
+.presentation-disclaimer-card::before,
+.presentation-metric-card::before,
+.presentation-priority-card::before,
+.presentation-hotlist-card::before,
+.presentation-feed-card::before,
+.presentation-sector-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+}
+
+/* Hero card gets more breathing room because it carries the main message. */
+.presentation-hero-copy {
+  padding: 32px 34px;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 126, 21, 0.17), transparent 32%),
+    linear-gradient(180deg, rgba(17, 28, 36, 0.97), rgba(8, 13, 19, 0.98));
+}
+
+/* Display label mirrors live-broadcast graphics language. */
+.presentation-kicker {
+  margin: 0 0 10px;
+  color: #8fb8b0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Presentation title is intentionally huge so it reads in a video instantly. */
+.presentation-hero-copy h1 {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(4.2rem, 11vw, 8.4rem);
+  line-height: 0.88;
+  letter-spacing: 0.05em;
+  color: #fff4db;
+}
+
+/* Lead paragraph keeps the purpose obvious without reading like legal copy. */
+.presentation-lead {
+  margin: 14px 0 0;
+  max-width: 42rem;
+  color: rgba(242, 238, 230, 0.84);
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+/* Disclaimer card keeps the required message readable and impossible to miss. */
+.presentation-disclaimer-card {
+  padding: 28px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  background:
+    radial-gradient(circle at 85% 18%, rgba(255, 110, 41, 0.2), transparent 24%),
+    linear-gradient(180deg, rgba(26, 20, 20, 0.96), rgba(12, 8, 9, 0.98));
+}
+
+/* Small status tags help the cards feel like a real control room. */
+.presentation-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  border: 1px solid rgba(255, 214, 146, 0.18);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #f6c86c;
+  background: rgba(255, 196, 94, 0.08);
+}
+
+/* Live tag gets a stronger red glow to mimic an active recording state. */
+.presentation-tag-live {
+  color: #ffd2cd;
+  background: rgba(255, 86, 54, 0.14);
+  border-color: rgba(255, 86, 54, 0.18);
+}
+
+/* Disclaimer text hierarchy keeps the legal line prominent. */
+.presentation-disclaimer-card strong {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1.15;
+  color: #fff2eb;
+}
+
+/* Body copy inside the disclaimer is softer and secondary. */
+.presentation-disclaimer-card p {
+  margin: 0;
+  color: rgba(255, 233, 223, 0.78);
+  line-height: 1.55;
+}
+
+/* KPI grid creates a quick command-center summary band. */
+.presentation-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Metric card stacks label, main number, and supporting context. */
+.presentation-metric-card {
+  padding: 22px 22px 20px;
+}
+
+/* Small labels reduce noise and keep attention on the value. */
+.presentation-metric-label {
+  display: block;
+  color: rgba(201, 216, 213, 0.78);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Big values are the primary hook when this page appears in a video. */
+.presentation-metric-value {
+  display: block;
+  margin-top: 12px;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(2.3rem, 4vw, 3.6rem);
+  letter-spacing: 0.06em;
+  color: #fff5df;
+}
+
+/* Short note provides context without making the card dense. */
+.presentation-metric-note {
+  margin: 6px 0 0;
+  color: rgba(222, 229, 226, 0.66);
+  line-height: 1.45;
+}
+
+/* Main operational band pairs a large narrative card with the hot list. */
+.presentation-command-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 16px;
+}
+
+/* Shared header layout is reused across multiple presentation cards. */
+.presentation-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Small metadata text imitates operator HUD labels. */
+.presentation-card-meta {
+  color: rgba(195, 209, 206, 0.66);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Priority card gets strong contrast and a warm focal glow. */
+.presentation-priority-card {
+  padding: 24px;
+  background:
+    radial-gradient(circle at 78% 20%, rgba(255, 117, 44, 0.2), transparent 24%),
+    linear-gradient(180deg, rgba(18, 25, 32, 0.98), rgba(8, 12, 18, 0.98));
+}
+
+/* Body layout splits the story text from compact supporting facts. */
+.presentation-priority-body {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+/* Sector label adds local context before the big speed number. */
+.presentation-priority-sector {
+  margin: 0 0 8px;
+  color: #91c7be;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Hero speed number carries the full emotional weight of the card. */
+.presentation-priority-body h2 {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(4rem, 8vw, 6rem);
+  letter-spacing: 0.06em;
+  line-height: 0.88;
+  color: #fff4d7;
+}
+
+/* Supporting paragraph stays readable next to the larger number. */
+.presentation-priority-copy {
+  margin: 14px 0 0;
+  max-width: 34rem;
+  color: rgba(230, 235, 232, 0.84);
+  line-height: 1.65;
+}
+
+/* Right-side rail compacts the key supporting facts for the demo script. */
+.presentation-priority-rail {
+  display: grid;
+  gap: 10px;
+}
+
+/* Individual rail blocks feel like mini readouts from a control desk. */
+.presentation-rail-item {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Labels inside the rail are intentionally subtle. */
+.presentation-rail-item span,
+.presentation-feed-footer span,
+.presentation-sector-stats span,
+.presentation-hotlist-row span,
+.presentation-driver-row span {
+  display: block;
+  color: rgba(204, 216, 214, 0.68);
+  font-size: 0.8rem;
+}
+
+/* Values inside the rail need more emphasis. */
+.presentation-rail-item strong,
+.presentation-feed-footer strong,
+.presentation-sector-stats strong {
+  display: block;
+  margin-top: 6px;
+  color: #fff6e6;
+  font-size: 1rem;
+}
+
+/* Hot list card stays tight and highly scannable. */
+.presentation-hotlist-card {
+  padding: 24px;
+}
+
+/* Rows stack into a mini leaderboard with clear separators. */
+.presentation-hotlist-table {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* Each row uses three columns: identity, speed, and delta/time. */
+.presentation-hotlist-row {
+  display: grid;
+  grid-template-columns: 1.15fr 0.95fr 0.5fr;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 13px 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+/* Strong text defines the quick-read anchors in every row. */
+.presentation-hotlist-row strong,
+.presentation-driver-row strong {
+  color: #fff4dd;
+}
+
+/* Section headings pair a title cluster with a short explainer line. */
+.presentation-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+/* Secondary section titles remain bold but below the main hero. */
+.presentation-section-heading h2 {
+  margin: 4px 0 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(2.2rem, 4vw, 3.3rem);
+  letter-spacing: 0.06em;
+  color: #fff1d9;
+}
+
+/* Explanatory copy stays narrow so the layout remains airy. */
+.presentation-section-note {
+  max-width: 33rem;
+  margin: 0;
+  color: rgba(221, 229, 227, 0.72);
+  line-height: 1.55;
+}
+
+/* Wall section creates a clean stage for the four camera cards. */
+.presentation-wall-section,
+.presentation-sector-board-section {
+  display: grid;
+  gap: 14px;
+}
+
+/* Feed grid is the core "multiple videos" layout the user asked for. */
+.presentation-feed-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* Feed cards contain both the visual frame and the analytics caption. */
+.presentation-feed-card {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+/* Frame container gives us a stable 16:9 video-like stage. */
+.presentation-feed-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #0a0f14;
+}
+
+/* Static image behaves like the poster frame for the fake video stream. */
+.presentation-feed-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.01);
+}
+
+/* Overlay adds cinematic tint and scanline texture. */
+.presentation-feed-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(4, 8, 13, 0.18), rgba(2, 5, 8, 0.62)),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.06) 0,
+      rgba(255, 255, 255, 0.06) 2px,
+      transparent 2px,
+      transparent 8px
+    );
+  mix-blend-mode: screen;
+}
+
+/* Top bar mimics camera id + recording indicator graphics. */
+.presentation-feed-topbar {
+  position: absolute;
+  inset: 14px 14px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Camera identifier looks technical and compact. */
+.presentation-feed-id {
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(4, 8, 13, 0.58);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #eaf7f4;
+}
+
+/* REC badge pulses slightly so the card feels more alive. */
+.presentation-feed-rec {
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: rgba(240, 52, 52, 0.88);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  box-shadow: 0 0 24px rgba(240, 52, 52, 0.36);
+  animation: pulse 1400ms ease-in-out infinite;
+}
+
+/* Center label calls out the most important speed visible in the frame. */
+.presentation-feed-center {
+  position: absolute;
+  inset: 50% auto auto 20px;
+  transform: translateY(-50%);
+  display: grid;
+  gap: 8px;
+}
+
+/* Occupancy badge adds a second layer of control-room metadata. */
+.presentation-feed-badge {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: rgba(10, 19, 27, 0.72);
+  color: #b9d8cf;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Big speed in the frame anchors the eye immediately. */
+.presentation-feed-center strong {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(2.6rem, 4vw, 4rem);
+  letter-spacing: 0.08em;
+  color: #fff2d2;
+  text-shadow: 0 10px 24px rgba(0, 0, 0, 0.42);
+}
+
+/* Footer readouts line up like mini dashboard counters. */
+.presentation-feed-footer {
+  position: absolute;
+  inset: auto 16px 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* Footer cells need a dark translucent backdrop for readability. */
+.presentation-feed-footer > div {
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: rgba(7, 13, 18, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+/* Card copy under the frame explains what sector we are looking at. */
+.presentation-feed-copy {
+  display: grid;
+  gap: 10px;
+}
+
+/* Sector label is concise and technical. */
+.presentation-feed-sector {
+  margin: 0;
+  color: #87c5b5;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Corridor title stays readable and camera-friendly. */
+.presentation-feed-copy h3 {
+  margin: 4px 0 0;
+  font-size: 1.35rem;
+  color: #fff3e0;
+}
+
+/* Supporting sentence keeps the fake alert story understandable. */
+.presentation-feed-copy p {
+  margin: 0;
+  color: rgba(223, 230, 227, 0.72);
+  line-height: 1.5;
+}
+
+/* Trend bars make the feeds feel analytical instead of decorative. */
+.presentation-trend-bars {
+  display: flex;
+  align-items: end;
+  gap: 6px;
+  height: 76px;
+  margin-top: 2px;
+}
+
+/* Individual bars use a warm accent to echo "speed warning" visuals. */
+.presentation-trend-bar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 999px 999px 6px 6px;
+  background: linear-gradient(180deg, #ffcb6b 0%, #ff6f3c 100%);
+  opacity: 0.92;
+}
+
+/* Sector grid provides the requested per-sector list of offenders. */
+.presentation-sector-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Sector cards keep the lists compact enough for a single screen shot. */
+.presentation-sector-card {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+/* The small stat row lets each sector summarize itself instantly. */
+.presentation-sector-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* Stat cells mirror the visual language of the other control cards. */
+.presentation-sector-stats > div {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Driver list stacks three captured offenders per sector. */
+.presentation-driver-list {
+  display: grid;
+  gap: 10px;
+}
+
+/* Driver rows balance plate identity and the measured speed. */
+.presentation-driver-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+}
+
+/* Last item does not need an extra dividing line. */
+.presentation-driver-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Pulse animation makes REC badge feel like a real active stream. */
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.92;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
 /* Small entrance animation adds polish without heavy motion cost. */
 @keyframes reveal {
   from {
@@ -663,6 +1254,62 @@ body {
   }
 
   .calibration-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .presentation-hero,
+  .presentation-command-grid,
+  .presentation-priority-body,
+  .presentation-section-heading,
+  .presentation-feed-grid,
+  .presentation-sector-grid,
+  .presentation-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .presentation-section-heading {
+    align-items: start;
+  }
+
+  .presentation-hotlist-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Large phones benefit from a softer 2-column sector wall before full stacking. */
+@media (max-width: 1180px) {
+  .presentation-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .presentation-sector-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Tight mobile screens need more compact inner spacing. */
+@media (max-width: 640px) {
+  .presentation-shell {
+    width: min(94vw, 100%);
+    padding-top: 18px;
+  }
+
+  .presentation-hero-copy,
+  .presentation-disclaimer-card,
+  .presentation-priority-card,
+  .presentation-hotlist-card,
+  .presentation-feed-card,
+  .presentation-sector-card {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .presentation-feed-card {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .presentation-feed-footer {
     grid-template-columns: 1fr;
   }
 }

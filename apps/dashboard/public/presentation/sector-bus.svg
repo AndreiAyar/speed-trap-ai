@@ -1,0 +1,34 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" fill="#D6DDD6"/>
+  <rect x="0" y="0" width="1600" height="900" fill="url(#haze)"/>
+  <rect x="530" y="0" width="540" height="900" fill="#6B6F73"/>
+  <rect x="600" y="0" width="400" height="900" fill="#50555A"/>
+  <rect x="90" y="0" width="430" height="900" fill="#95A37B"/>
+  <rect x="1080" y="0" width="430" height="900" fill="#95A37B"/>
+  <g opacity="0.58" stroke="#F6F3EA" stroke-width="10" stroke-dasharray="28 34">
+    <path d="M760 0V900"/>
+    <path d="M910 0V900"/>
+    <path d="M1140 0V900"/>
+  </g>
+  <g>
+    <rect x="610" y="450" width="128" height="248" rx="22" fill="#F0CC4B"/>
+    <rect x="760" y="390" width="132" height="258" rx="22" fill="#A9282C"/>
+    <rect x="1010" y="540" width="88" height="146" rx="24" fill="#E4E7EA"/>
+    <rect x="1130" y="440" width="94" height="154" rx="24" fill="#9E2432"/>
+    <rect x="1248" y="620" width="104" height="164" rx="28" fill="#D94E42"/>
+    <rect x="1190" y="250" width="74" height="122" rx="20" fill="#F0F4F8"/>
+    <rect x="1070" y="210" width="70" height="118" rx="20" fill="#B1BAC1"/>
+    <rect x="950" y="670" width="82" height="128" rx="24" fill="#1C1E23"/>
+  </g>
+  <g opacity="0.9">
+    <rect x="120" y="140" width="210" height="120" rx="12" fill="#B33B33"/>
+    <rect x="1170" y="60" width="220" height="20" rx="10" fill="#A56437"/>
+  </g>
+  <defs>
+    <linearGradient id="haze" x1="800" y1="0" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#AAB7C0" stop-opacity="0.18"/>
+      <stop offset="0.65" stop-color="#AAB7C0" stop-opacity="0"/>
+      <stop offset="1" stop-color="#6F7E63" stop-opacity="0.08"/>
+    </linearGradient>
+  </defs>
+</svg>
