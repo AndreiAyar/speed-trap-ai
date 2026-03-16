@@ -1,186 +1,105 @@
-# Speed Trap AI MVP
+# Speed Trap AI
 
-Speed Trap AI is an entertainment-first traffic analysis app for offline video processing.
+Speed Trap AI is an entertainment demo that estimates vehicle speed from recorded road video.
 
-It takes a recorded road video, detects and tracks vehicles, estimates speed with a two-line A -> B gate, renders an overlay video, and shows the results in a dashboard.
+It detects vehicles, tracks them across frames, measures the time needed to travel between two virtual lines, renders an annotated overlay video, and shows results in a local dashboard.
 
-This project is built for demos, storytelling, and educational content. It is **not** a legal enforcement system.
+> Doar pentru divertisment. Nu este masurare legala.
 
-## What The App Does
+This project is for demos, storytelling, and educational explainers. It is not a police radar, not a certified measuring tool, and not legal proof of speed.
 
-The app currently does all of this:
+## What It Does
 
-- Runs on a recorded video file from your computer.
-- Detects vehicles with `YOLO26n`.
-- Tracks each vehicle with `ByteTrack`.
-- Uses a configurable `line_a` and `line_b` speed gate.
-- Measures estimated km/h only when a tracked vehicle crosses A and then B in the expected direction.
-- Restricts detection logic to an optional `roi_polygon`.
-- Draws an overlay video with:
-  - bounding boxes
-  - track IDs
-  - speed/status labels
-  - A/B lines
-  - ROI outline
-  - movement trails
-  - anchor point dot
-- Blurs vehicles by default for safer publishing.
-- Writes job results to disk and indexes them in SQLite.
-- Shows a React dashboard with:
-  - recent jobs
-  - processing status
-  - overlay preview
-  - valid speed leaderboard
-  - per-vehicle details
-  - calibration helper for lines and ROI
+- Processes recorded video files offline
+- Detects vehicles with `yolo26n.pt`
+- Falls back to `yolo11n.pt` if needed
+- Tracks vehicles with `ByteTrack`
+- Uses a configurable two-line speed gate: `Linia A` -> `Linia B`
+- Restricts analysis to an optional `roi_polygon`
+- Blurs vehicles by default for safer sharing
+- Exports overlay video, CSV, JSONL, and metadata artifacts
+- Stores job history and leaderboard data in SQLite
+- Provides a React dashboard for upload, status, preview, and calibration
 
-## Important Disclaimer
+## How Speed Is Estimated
 
-This app gives an **AI estimate** for entertainment and explanation.
+The core method stays intentionally simple and easy to explain:
 
-It is **not**:
-
-- a police radar
-- a certified measurement tool
-- legal proof of speed
-
-If the camera moves, calibration is wrong, tracking breaks, or lines are placed badly, the reading can be wrong.
-
-## How The Speed Estimate Works
-
-The current method is intentionally simple:
-
-1. Define `line_a` and `line_b` in video pixel coordinates.
-2. Define the real `distance_meters` between those two lines.
-3. Track a vehicle over time.
-4. Use the vehicle anchor point, currently `bottom_center` of the bounding box.
-5. Save `t1` when that anchor crosses line A.
-6. Save `t2` when the same tracked vehicle crosses line B.
-7. Compute:
+1. A vehicle crosses `Linia A` at `t1`
+2. The same tracked vehicle crosses `Linia B` at `t2`
+3. Speed is estimated with:
 
 ```text
-speed_mps = distance_meters / (t2 - t1)
-speed_kmh = speed_mps * 3.6
+speed_kmh = distance_meters / (t2 - t1) * 3.6
 ```
 
-Only vehicles with a valid final speed are shown in the leaderboard.
+Important notes:
 
-## Why Some Vehicles Do Not Receive A Speed
+- `distance_meters` is the real-world distance between the two virtual lines
+- crossing time comes from the tracked vehicle anchor point
+- only valid A -> B crossings in the expected direction produce a final speed
+- results can be wrong if calibration, tracking, or camera stability are poor
 
-A vehicle may appear on screen and still get no final km/h if:
+## Why A Vehicle May Have No Final Speed
 
-- it never crosses line A and line B in a valid order
-- it is outside the ROI
-- it is moving in the opposite configured direction
-- the tracker changes its ID mid-run
-- the anchor point does not actually cross the line even if the box seems to
+A vehicle can appear in the video and still not receive a speed if:
 
-That is why the overlay uses status labels like:
+- it never crosses both lines in the valid order
+- it moves in the opposite configured direction
+- it stays outside the ROI
+- the tracker loses the object and assigns a new ID
+- the anchor point never truly crosses the line even if the box looks close
 
-- `Estimare AI: XX km/h`
-- `asteapta linia A`
-- `asteapta linia B`
-- `in afara ROI`
-- `sens opus`
-- `fara crossing valid`
+## Architecture
 
-## Current Dashboard Features
-
-The dashboard is built to make calibration and presentation easier.
-
-### Main result view
-
-- Shows recent jobs from SQLite-backed history.
-- Survives refresh and restores the last selected job.
-- Displays only tracks with valid final speed in `Top viteze detectate`.
-- Clicking a leaderboard row:
-  - selects that vehicle
-  - loads its details
-  - jumps the overlay video to the most relevant moment for that car
-
-### Calibration tool
-
-The calibration tool is below the main dashboard and supports:
-
-- local video path input, for example:
-
-```text
-data/input/sample.mp4
-```
-
-- manual `Load Video`
-- paused-by-default preview
-- live cursor `x/y`
-- click-to-place points
-- manual coordinate editing
-- collapsible `Line points` section
-- collapsible `ROI polygon` section
-- optional ROI overlay toggle
-- YAML snippet generation for easy copy into config
-
-## Project Structure
-
-- `apps/api`
-  - Node.js API for job creation, job history, leaderboard data, and local preview serving
-- `apps/dashboard`
-  - React/Vite dashboard for upload, preview, calibration, and results
 - `engine/python`
-  - Python detection/tracking/speed engine
-- `engine/python/configs/camera.default.yaml`
-  - main scene config for lines, ROI, direction, blur, trails, and distance
-- `data/input`
-  - input videos
-- `data/output`
-  - generated job artifacts
-- `data/speed-trap.sqlite`
-  - local app/job index database
+  Python pipeline for detection, tracking, two-line speed gating, privacy blur, and overlay export
+- `apps/api`
+  Node/Express API that runs jobs and exposes history, job status, and leaderboard data
+- `apps/dashboard`
+  React dashboard for upload, preview, calibration, and result browsing
 - `docs`
-  - Romanian simple explanation docs and production notes
+  Supporting Romanian docs and presentation notes
 
-## What Gets Saved Where
+## Defaults
 
-### SQLite
+- Primary model: `yolo26n.pt`
+- Fallback model: `yolo11n.pt`
+- Tracker: `ByteTrack`
+- Privacy blur: enabled by default
+- Anchor point: `bottom_center`
 
-SQLite is used as the app index.
+Main scene config:
 
-It stores:
+- `engine/python/configs/camera.default.yaml`
 
-- jobs
-- status/progress
-- artifact paths
-- per-track summary rows
+Important config fields:
 
-This is what makes the dashboard history survive refresh.
-
-### JSON / CSV / Video
-
-Each job writes artifacts to `data/output/<jobId>/`.
-
-Typical files:
-
-- `overlay.mp4`
-- `summary.csv`
-- `events.jsonl`
-- `metadata.json`
-
-These files are the detailed outputs of one run.
+- `line_a`
+- `line_b`
+- `distance_meters`
+- `roi_polygon`
+- `direction`
+- `anchor_point`
+- `privacy_blur`
+- `trail_enabled`
 
 ## Prerequisites
 
 - Node.js `22+`
 - `pnpm` `9+`
 - Python `3.11+`
-- `ffmpeg` in `PATH`
+- `ffmpeg` available in `PATH`
 
 ## Setup
 
-### 1. Install Node dependencies
+### 1. Install JavaScript dependencies
 
 ```bash
 pnpm install
 ```
 
-### 2. Create Python environment
+### 2. Create the Python environment
 
 ```bash
 cd engine/python
@@ -189,7 +108,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Start API and dashboard
+## Run The App
+
+### Start API + dashboard
 
 From the project root:
 
@@ -200,65 +121,75 @@ From the project root:
 This starts:
 
 - API on `http://localhost:8787`
-- dashboard dev server
+- dashboard dev server through Vite
 
-### 4. Run an offline job from terminal
+### Run one offline job from terminal
 
 ```bash
 ./scripts/run-offline.sh data/input/sample.mp4
 ```
 
+The script creates a timestamped job folder in `data/output/` and runs the Python pipeline with the default camera config.
+
 You can also create jobs from the dashboard UI.
 
 ## Typical Workflow
 
-1. Put a video into `data/input/`.
-2. Open the dashboard.
-3. Start a job or pick an existing one.
-4. Wait for processing to finish.
-5. Open the calibration tool if you need to refine lines or ROI.
-6. Re-run the job after calibration changes.
-7. Review:
-  - overlay video
-  - valid-speed leaderboard
-  - individual vehicle details
+1. Put a video in `data/input/`
+2. Start the API and dashboard
+3. Open the dashboard in your browser
+4. Run a job or select an older one
+5. Review the overlay, leaderboard, and per-vehicle details
+6. Use the calibration tool to adjust lines or ROI
+7. Re-run the job after calibration updates
 
-## Scene Configuration
+## Dashboard Features
 
-Main config file:
+- Recent job history backed by SQLite
+- Processing status for each job
+- Overlay video preview
+- Valid-speed leaderboard
+- Per-vehicle detail panel
+- Calibration helper for line points and ROI polygon
+- YAML snippet generation for easy config updates
 
-- [camera.default.yaml](engine/python/configs/camera.default.yaml)
+## Output Files
 
-Important fields:
+Each job writes artifacts to:
 
-- `line_a`
-- `line_b`
-- `distance_meters`
-- `roi_polygon`
-- `direction`
-- `anchor_point`
-- `privacy_blur`
-- `trail_enabled`
-- `show_anchor_point`
+```text
+data/output/<jobId>/
+```
 
-## Notes About Accuracy
+Typical files include:
 
-This setup works best when:
+- `overlay.mp4`
+- `summary.csv`
+- `events.jsonl`
+- `metadata.json`
+
+SQLite index file:
+
+- `data/speed-trap.sqlite`
+
+## Accuracy Notes
+
+This demo works best when:
 
 - the camera is fixed
 - the road perspective is stable
-- A/B lines are placed carefully
+- the two lines are placed carefully
 - `distance_meters` is measured correctly
-- ROI matches the target carriageway
-- direction matches the flow you want to measure
+- ROI matches the intended carriageway
+- vehicle movement direction matches the configured direction
 
-This setup works badly when:
+This demo works badly when:
 
 - the camera shakes or pans
 - the scene changes during recording
 - vehicles are heavily occluded
-- the tracker keeps switching IDs
-- the distance calibration is guessed badly
+- IDs switch often during tracking
+- distance calibration is guessed instead of measured
 
 ## Current Stack
 
@@ -266,24 +197,22 @@ This setup works badly when:
 - API: Node.js + Express + SQLite
 - Engine: Python + OpenCV + Ultralytics YOLO + ByteTrack
 
-## Useful Docs In This Repo
+## Useful Docs
 
-- [docs/ghid-viteza-ai-ro.md](docs/ghid-viteza-ai-ro.md)
-- [docs/video-production-playbook-ro.md](docs/video-production-playbook-ro.md)
+- `docs/ghid-viteza-ai-ro.md`
+- `docs/video-production-playbook-ro.md`
 
 ## Current MVP Limits
 
-This MVP is currently:
-
 - offline-first
-- based on one scene config at a time
-- using a two-line gate, not homography calibration
-- optimized for easy explanation and iteration
+- one scene configuration at a time
+- two-line gate estimation, not homography-based speed measurement
+- optimized for explainability and fast iteration
 
 Not implemented yet:
 
-- true live phone ingest pipeline
+- true live phone ingest
 - homography-based continuous speed estimation
 - per-lane calibration
-- snapshot export per vehicle
+- per-vehicle snapshot export
 - legal-grade validation
