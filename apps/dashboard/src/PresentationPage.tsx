@@ -43,6 +43,9 @@ type SectorBoard = {
   }>;
 };
 
+// Public presentation assets need a base-aware helper so static exports work from any folder.
+const presentationAsset = (fileName: string) => `${import.meta.env.BASE_URL}presentation/${fileName}`;
+
 // Fake KPI cards set the tone quickly for the presentation video.
 const presentationMetrics: PresentationMetric[] = [
   {
@@ -73,7 +76,7 @@ const presentationFeeds: PresentationFeed[] = [
     id: "CAM-01",
     sector: "Sector A1",
     corridor: "Centura Est / intrare oras",
-    imageUrl: "/presentation/sector-est.svg",
+    imageUrl: presentationAsset("sector-est.svg"),
     speedLimitKmh: 70,
     averageSpeedKmh: 84,
     topSpeedKmh: 154,
@@ -86,7 +89,7 @@ const presentationFeeds: PresentationFeed[] = [
     id: "CAM-02",
     sector: "Sector B3",
     corridor: "Pasaj Vest / apus",
-    imageUrl: "/presentation/sector-apus.svg",
+    imageUrl: presentationAsset("sector-apus.svg"),
     speedLimitKmh: 60,
     averageSpeedKmh: 73,
     topSpeedKmh: 138,
@@ -99,7 +102,7 @@ const presentationFeeds: PresentationFeed[] = [
     id: "CAM-03",
     sector: "Sector C2",
     corridor: "Coridor bus + banda rapida",
-    imageUrl: "/presentation/sector-bus.svg",
+    imageUrl: presentationAsset("sector-bus.svg"),
     speedLimitKmh: 50,
     averageSpeedKmh: 66,
     topSpeedKmh: 121,
@@ -112,7 +115,7 @@ const presentationFeeds: PresentationFeed[] = [
     id: "CAM-04",
     sector: "Sector D5",
     corridor: "Splai Sud / sens dublu",
-    imageUrl: "/presentation/sector-splai.svg",
+    imageUrl: presentationAsset("sector-splai.svg"),
     speedLimitKmh: 70,
     averageSpeedKmh: 79,
     topSpeedKmh: 145,
