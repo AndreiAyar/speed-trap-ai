@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 // We keep the mandatory entertainment disclaimer in a single constant.
 const RADAR_DISCLAIMER = "Doar pentru divertisment. Nu este masurare legala.";
 
-// Clamp helper keeps percentage values inside valid screen-relative bounds.
+// Clamp helper keeps slider values in a safe numeric interval.
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 // Radar page offers a full-screen capture view plus scrollable control panel.
@@ -32,16 +32,6 @@ export function RadarPage() {
 
   // We store bounding box height as percentage of stage height.
   const [boxHeight, setBoxHeight] = useState<number>(24);
-
-  // We keep X valid when width changes so the box can still reach right edge.
-  useEffect(() => {
-    setBoxX((previous) => clamp(previous, 0, Math.max(0, 100 - boxWidth)));
-  }, [boxWidth]);
-
-  // We keep Y valid when height changes so the box can still reach bottom edge.
-  useEffect(() => {
-    setBoxY((previous) => clamp(previous, 0, Math.max(0, 100 - boxHeight)));
-  }, [boxHeight]);
 
   // We regenerate and clean up object URLs whenever selected file changes.
   useEffect(() => {
@@ -199,13 +189,13 @@ export function RadarPage() {
             <input
               type="range"
               min={0}
-              max={Math.max(0, 100 - boxWidth)}
+              max={100}
               step={0.1}
               value={boxX}
               onChange={(event) => {
                 // We move box on horizontal axis.
                 const nextValue = Number(event.currentTarget.value);
-                setBoxX(clamp(nextValue, 0, Math.max(0, 100 - boxWidth)));
+                setBoxX(clamp(nextValue, 0, 100));
               }}
             />
           </label>
@@ -215,13 +205,13 @@ export function RadarPage() {
             <input
               type="range"
               min={0}
-              max={Math.max(0, 100 - boxHeight)}
+              max={100}
               step={0.1}
               value={boxY}
               onChange={(event) => {
                 // We move box on vertical axis.
                 const nextValue = Number(event.currentTarget.value);
-                setBoxY(clamp(nextValue, 0, Math.max(0, 100 - boxHeight)));
+                setBoxY(clamp(nextValue, 0, 100));
               }}
             />
           </label>
@@ -231,13 +221,13 @@ export function RadarPage() {
             <input
               type="range"
               min={1}
-              max={Math.max(1, 100 - boxX)}
+              max={100}
               step={0.1}
               value={boxWidth}
               onChange={(event) => {
                 // We scale box width in stage-relative percentages.
                 const nextValue = Number(event.currentTarget.value);
-                setBoxWidth(clamp(nextValue, 1, Math.max(1, 100 - boxX)));
+                setBoxWidth(clamp(nextValue, 1, 100));
               }}
             />
           </label>
@@ -247,13 +237,13 @@ export function RadarPage() {
             <input
               type="range"
               min={1}
-              max={Math.max(1, 100 - boxY)}
+              max={100}
               step={0.1}
               value={boxHeight}
               onChange={(event) => {
                 // We scale box height in stage-relative percentages.
                 const nextValue = Number(event.currentTarget.value);
-                setBoxHeight(clamp(nextValue, 1, Math.max(1, 100 - boxY)));
+                setBoxHeight(clamp(nextValue, 1, 100));
               }}
             />
           </label>
