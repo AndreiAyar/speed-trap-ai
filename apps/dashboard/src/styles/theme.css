@@ -42,21 +42,180 @@ body {
   gap: 18px;
 }
 
-/* Radar shell centers the standalone upload card in the viewport. */
+/* Radar shell stacks fullscreen stage first and settings panel after it. */
 .radar-shell {
-  width: min(880px, 94vw);
-  min-height: 100vh;
-  margin: 0 auto;
+  width: min(100vw, 100%);
+  margin: 0;
   display: grid;
-  align-content: center;
-  padding: 24px 0 40px;
+  gap: 0;
+  padding: 0;
 }
 
-/* Radar card keeps the first delivery intentionally simple and clean. */
-.radar-card {
+/* Stage acts like the tablet radar screen and fills one visible viewport. */
+.radar-stage {
+  position: relative;
+  height: 100svh;
+  min-height: 520px;
+  border: 1px solid rgba(160, 193, 198, 0.45);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #040a0e;
+}
+
+/* Uploaded image fills the stage without extra UI distractions. */
+.radar-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Placeholder appears when no image is selected yet. */
+.radar-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 20px;
+  color: rgba(210, 229, 233, 0.86);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(0, 200, 255, 0.1), transparent 45%),
+    linear-gradient(180deg, rgba(2, 9, 13, 0.96), rgba(1, 4, 7, 0.98));
+}
+
+/* Scan layer adds horizontal lines plus a vertical sweep animation. */
+.radar-overlay-scan {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(95, 182, 200, 0.12) 0,
+      rgba(95, 182, 200, 0.12) 1px,
+      transparent 1px,
+      transparent 6px
+    ),
+    linear-gradient(90deg, rgba(72, 212, 255, 0), rgba(72, 212, 255, 0.2), rgba(72, 212, 255, 0));
+  mix-blend-mode: screen;
+  animation: radarSweep 2600ms linear infinite;
+  pointer-events: none;
+}
+
+/* Vignette darkens edges so center subject pops like monitor footage. */
+.radar-overlay-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 48%, rgba(0, 0, 0, 0.56) 100%);
+  pointer-events: none;
+}
+
+/* Bounding box mimics target lock from a traffic speed camera. */
+.radar-bbox {
+  position: absolute;
+  border: 2px solid rgba(120, 255, 228, 0.95);
+  box-shadow:
+    0 0 0 1px rgba(120, 255, 228, 0.25),
+    0 0 18px rgba(120, 255, 228, 0.35);
+}
+
+/* Corner accents make the box feel more technical and readable. */
+.radar-bbox-corners {
+  position: absolute;
+  inset: 0;
+}
+
+.radar-bbox-corners::before,
+.radar-bbox-corners::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid transparent;
+}
+
+.radar-bbox-corners::before {
+  border-top-color: rgba(190, 255, 242, 0.95);
+  border-left-color: rgba(190, 255, 242, 0.95);
+  width: 26%;
+  height: 30%;
+}
+
+.radar-bbox-corners::after {
+  border-right-color: rgba(190, 255, 242, 0.95);
+  border-bottom-color: rgba(190, 255, 242, 0.95);
+  width: 26%;
+  height: 30%;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  top: auto;
+}
+
+/* Flashing speed readout is intentionally aggressive for camera effect. */
+.radar-speed-flash {
+  position: absolute;
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(1.7rem, 3.8vw, 3.2rem);
+  letter-spacing: 0.08em;
+  color: #ff4f38;
+  text-shadow:
+    0 0 8px rgba(255, 79, 56, 0.85),
+    0 0 28px rgba(255, 79, 56, 0.62);
+  transform: translateY(-4px);
+  animation: radarFlash 420ms steps(2, end) infinite;
+  pointer-events: none;
+}
+
+/* HUD bar at the top makes the stage look like a dedicated radar feed. */
+.radar-hud-top {
+  position: absolute;
+  inset: 14px 14px auto;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  pointer-events: none;
+}
+
+.radar-hud-top span {
+  border: 1px solid rgba(128, 208, 226, 0.42);
+  border-radius: 999px;
+  padding: 4px 9px;
+  color: rgba(164, 233, 247, 0.9);
+  background: rgba(3, 16, 22, 0.62);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Required disclaimer stays always visible on the active radar stage. */
+.radar-disclaimer-overlay {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  margin: 0;
+  color: rgba(243, 212, 206, 0.9);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+}
+
+/* Controls panel lives after first screen so user reaches it by scroll. */
+.radar-controls {
+  width: min(1100px, 94vw);
+  margin: 20px auto 34px;
   border: 1px solid var(--line);
-  border-radius: 24px;
-  padding: 22px;
+  border-radius: 22px;
+  padding: 20px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: var(--panel-shadow);
 }
@@ -70,26 +229,73 @@ body {
   line-height: 0.9;
 }
 
-/* Preview wrapper keeps video and file name grouped together. */
-.radar-preview-wrap {
+/* Controls grid keeps sliders compact and easy to tweak on tablet. */
+.radar-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   margin-top: 14px;
 }
 
-/* Empty state provides clear guidance before first upload. */
-.radar-empty {
-  margin: 14px 0 0;
-  border: 1px dashed #c8b6a7;
+/* Each control card groups one adjustable radar setting. */
+.radar-control {
+  border: 1px solid #d9cbbe;
   border-radius: 12px;
-  padding: 12px;
-  color: #6c584c;
-  background: rgba(255, 255, 255, 0.72);
+  padding: 10px;
+  background: rgba(255, 252, 247, 0.85);
+  display: grid;
+  gap: 8px;
+}
+
+.radar-control span {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #5d4f46;
+}
+
+/* Range inputs get a cleaner accent color for rapid calibration. */
+.radar-control input[type="range"] {
+  width: 100%;
+  accent-color: #0e8f8c;
 }
 
 /* File name appears as simple metadata below the preview player. */
 .radar-file-name {
-  margin: 8px 0 0;
+  margin: 12px 0 0;
   font-size: 0.86rem;
   color: #604e43;
+}
+
+/* Horizontal sweep animation drives the "radar scanning" feeling. */
+@keyframes radarSweep {
+  0% {
+    background-position:
+      0 0,
+      -120% 0;
+  }
+  100% {
+    background-position:
+      0 0,
+      120% 0;
+  }
+}
+
+/* Fast stepped opacity creates a hard flashing speed readout. */
+@keyframes radarFlash {
+  0% {
+    opacity: 1;
+  }
+  49% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.14;
+  }
+  100% {
+    opacity: 0.14;
+  }
 }
 
 /* Hero section creates strong first impression for video presentation. */
@@ -1304,6 +1510,10 @@ body[data-view="presentation"] {
   }
 
   .calibration-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .radar-controls-grid {
     grid-template-columns: 1fr;
   }
 
