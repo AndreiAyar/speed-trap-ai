@@ -23,12 +23,18 @@ import { VideoPreview } from "./components/VideoPreview";
 import { RecentJobs } from "./components/RecentJobs";
 import { LineCalibrationTool } from "./components/LineCalibrationTool";
 import { PresentationPage } from "./PresentationPage";
+import { RadarPage } from "./RadarPage";
 
 // We define localStorage key for restoring selected job after refresh.
 const ACTIVE_JOB_STORAGE_KEY = "speedTrap.activeJobId";
 
 // App component selects the correct top-level screen based on pathname.
 export function App() {
+  // We expose a dedicated radar route for local video upload + preview iteration.
+  if (window.location.pathname.startsWith("/radar")) {
+    return <RadarPage />;
+  }
+
   // We expose a dedicated presentation route without pulling in a router dependency.
   if (window.location.pathname.startsWith("/presentation")) {
     return <PresentationPage />;
