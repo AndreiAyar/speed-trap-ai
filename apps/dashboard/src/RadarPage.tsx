@@ -66,15 +66,23 @@ export function RadarPage() {
     <main className="radar-shell">
       <section className="radar-stage">
         {imageUrl ? (
-          <img
-            className="radar-image"
-            src={imageUrl}
-            alt="Cadru incarcat pentru simulare radar"
-            style={{
-              // We combine blur and color tuning for a believable radar monitor mood.
-              filter: `blur(${blurPx}px) contrast(1.15) saturate(0.82) hue-rotate(-12deg) brightness(0.9)`,
-            }}
-          />
+          <>
+            <img
+              className="radar-image-backdrop"
+              src={imageUrl}
+              alt=""
+              aria-hidden="true"
+            />
+            <img
+              className="radar-image"
+              src={imageUrl}
+              alt="Cadru incarcat pentru simulare radar"
+              style={{
+                // We combine blur and color tuning for a believable radar monitor mood.
+                filter: `blur(${blurPx}px) contrast(1.15) saturate(0.82) hue-rotate(-12deg) brightness(0.9)`,
+              }}
+            />
+          </>
         ) : (
           <div className="radar-placeholder">
             Incarca o poza din setarile de mai jos ca sa porneasca simularea radar.
