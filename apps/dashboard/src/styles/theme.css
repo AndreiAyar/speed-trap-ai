@@ -80,6 +80,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  animation: liveDrift 4200ms ease-in-out infinite;
 }
 
 /* Placeholder appears when no image is selected yet. */
@@ -266,6 +267,41 @@ body {
   color: #5d4f46;
 }
 
+/* Toggle controls center one compact ON/OFF button under the label. */
+.radar-control-toggle {
+  align-content: start;
+}
+
+/* Toggle button keeps control tactile and tablet-friendly. */
+.radar-toggle {
+  width: 110px;
+  border-radius: 999px;
+  border: 1px solid #c6b4a4;
+  padding: 9px 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease, background-color 120ms ease;
+}
+
+.radar-toggle:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.radar-toggle-on {
+  color: #edfff8;
+  background: linear-gradient(135deg, #118d73, #0e8f8c);
+  border-color: #0d8c77;
+}
+
+.radar-toggle-off {
+  color: #fff2ef;
+  background: linear-gradient(135deg, #8d2d29, #b03b31);
+  border-color: #952f2a;
+}
+
 /* Range inputs get a cleaner accent color for rapid calibration. */
 .radar-control input[type="range"] {
   width: 100%;
@@ -283,12 +319,17 @@ body {
 @keyframes radarSweep {
   0% {
     background-position:
-      0 0,
+      0 -8px,
       -120% 0;
+  }
+  50% {
+    background-position:
+      0 8px,
+      0 0;
   }
   100% {
     background-position:
-      0 0,
+      0 -8px,
       120% 0;
   }
 }
@@ -306,6 +347,25 @@ body {
   }
   100% {
     opacity: 0.14;
+  }
+}
+
+/* Very subtle movement simulates a live camera feed instead of a static photo. */
+@keyframes liveDrift {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  25% {
+    transform: scale(1.006) translate(-0.18%, 0.1%);
+  }
+  50% {
+    transform: scale(1.004) translate(0.12%, -0.12%);
+  }
+  75% {
+    transform: scale(1.007) translate(-0.08%, 0.08%);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
   }
 }
 

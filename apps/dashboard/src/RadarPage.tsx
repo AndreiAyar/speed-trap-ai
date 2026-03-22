@@ -33,6 +33,12 @@ export function RadarPage() {
   // We store bounding box height as percentage of stage height.
   const [boxHeight, setBoxHeight] = useState<number>(24);
 
+  // We allow turning target lock overlay (box + speed label) on/off.
+  const [showTargetLock, setShowTargetLock] = useState<boolean>(true);
+
+  // We allow turning scan lines overlay on/off independently.
+  const [showScanLines, setShowScanLines] = useState<boolean>(true);
+
   // We regenerate and clean up object URLs whenever selected file changes.
   useEffect(() => {
     // We clear preview when no image is selected.
@@ -79,11 +85,11 @@ export function RadarPage() {
           </div>
         )}
 
-        {/* Overlay layers add scan lines and HUD glow regardless of image state. */}
-        <div className="radar-overlay-scan" aria-hidden="true" />
+        {/* Scan lines can be toggled to simulate different monitoring modes. */}
+        {showScanLines ? <div className="radar-overlay-scan" aria-hidden="true" /> : null}
         <div className="radar-overlay-vignette" aria-hidden="true" />
 
-        {imageUrl ? (
+        {imageUrl && showTargetLock ? (
           <div
             className="radar-bbox"
             style={{
@@ -97,7 +103,7 @@ export function RadarPage() {
           </div>
         ) : null}
 
-        {imageUrl ? (
+        {imageUrl && showTargetLock ? (
           <p
             className="radar-speed-flash"
             style={{
@@ -150,6 +156,34 @@ export function RadarPage() {
         </form>
 
         <div className="radar-controls-grid">
+          <label className="radar-control radar-control-toggle">
+            <span>Target lock (chenar + KM/h)</span>
+            <button
+              type="button"
+              className={`radar-toggle ${showTargetLock ? "radar-toggle-on" : "radar-toggle-off"}`}
+              onClick={() => {
+                // We toggle full target lock overlay visibility.
+                setShowTargetLock((previous) => !previous);
+              }}
+            >
+              {showTargetLock ? "ON" : "OFF"}
+            </button>
+          </label>
+
+          <label className="radar-control radar-control-toggle">
+            <span>Scan lines</span>
+            <button
+              type="button"
+              className={`radar-toggle ${showScanLines ? "radar-toggle-on" : "radar-toggle-off"}`}
+              onClick={() => {
+                // We toggle scan-line overlay visibility.
+                setShowScanLines((previous) => !previous);
+              }}
+            >
+              {showScanLines ? "ON" : "OFF"}
+            </button>
+          </label>
+
           <label className="radar-control">
             <span>Viteza afisata (KM/h)</span>
             <input
