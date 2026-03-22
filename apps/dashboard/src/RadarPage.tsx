@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 // We keep the mandatory entertainment disclaimer in a single constant.
 const RADAR_DISCLAIMER = "Doar pentru divertisment. Nu este masurare legala.";
 
+// Clamp helper keeps percentage values inside valid screen-relative bounds.
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
 // Radar page offers a full-screen capture view plus scrollable control panel.
 export function RadarPage() {
   // We store selected local image so we can show metadata and allow re-selection.
@@ -29,6 +32,16 @@ export function RadarPage() {
 
   // We store bounding box height as percentage of stage height.
   const [boxHeight, setBoxHeight] = useState<number>(24);
+
+  // We keep X valid when width changes so the box can still reach right edge.
+  useEffect(() => {
+    setBoxX((previous) => clamp(previous, 0, Math.max(0, 100 - boxWidth)));
+  }, [boxWidth]);
+
+  // We keep Y valid when height changes so the box can still reach bottom edge.
+  useEffect(() => {
+    setBoxY((previous) => clamp(previous, 0, Math.max(0, 100 - boxHeight)));
+  }, [boxHeight]);
 
   // We regenerate and clean up object URLs whenever selected file changes.
   useEffect(() => {
@@ -174,31 +187,33 @@ export function RadarPage() {
           </label>
 
           <label className="radar-control">
-            <span>Chenar X: {boxX.toFixed(1)}%</span>
+            <span>Chenar X (din ecran): {boxX.toFixed(1)}%</span>
             <input
               type="range"
               min={0}
-              max={95}
+              max={Math.max(0, 100 - boxWidth)}
               step={0.1}
               value={boxX}
               onChange={(event) => {
                 // We move box on horizontal axis.
-                setBoxX(Number(event.currentTarget.value));
+                const nextValue = Number(event.currentTarget.value);
+                setBoxX(clamp(nextValue, 0, Math.max(0, 100 - boxWidth)));
               }}
             />
           </label>
 
           <label className="radar-control">
-            <span>Chenar Y: {boxY.toFixed(1)}%</span>
+            <span>Chenar Y (din ecran): {boxY.toFixed(1)}%</span>
             <input
               type="range"
               min={0}
-              max={95}
+              max={Math.max(0, 100 - boxHeight)}
               step={0.1}
               value={boxY}
               onChange={(event) => {
                 // We move box on vertical axis.
-                setBoxY(Number(event.currentTarget.value));
+                const nextValue = Number(event.currentTarget.value);
+                setBoxY(clamp(nextValue, 0, Math.max(0, 100 - boxHeight)));
               }}
             />
           </label>
@@ -207,13 +222,14 @@ export function RadarPage() {
             <span>Latime chenar: {boxWidth.toFixed(1)}%</span>
             <input
               type="range"
-              min={4}
-              max={70}
+              min={1}
+              max={Math.max(1, 100 - boxX)}
               step={0.1}
               value={boxWidth}
               onChange={(event) => {
                 // We scale box width in stage-relative percentages.
-                setBoxWidth(Number(event.currentTarget.value));
+                const nextValue = Number(event.currentTarget.value);
+                setBoxWidth(clamp(nextValue, 1, Math.max(1, 100 - boxX)));
               }}
             />
           </label>
@@ -222,13 +238,14 @@ export function RadarPage() {
             <span>Inaltime chenar: {boxHeight.toFixed(1)}%</span>
             <input
               type="range"
-              min={4}
-              max={80}
+              min={1}
+              max={Math.max(1, 100 - boxY)}
               step={0.1}
               value={boxHeight}
               onChange={(event) => {
                 // We scale box height in stage-relative percentages.
-                setBoxHeight(Number(event.currentTarget.value));
+                const nextValue = Number(event.currentTarget.value);
+                setBoxHeight(clamp(nextValue, 1, Math.max(1, 100 - boxY)));
               }}
             />
           </label>
