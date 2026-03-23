@@ -20,6 +20,9 @@ export function JobUpload({ onJobCreated }: JobUploadProps) {
   // We let users hide visual overlays for cars outside ROI while keeping blur.
   const [hideOutsideRoiOverlays, setHideOutsideRoiOverlays] = useState(true);
 
+  // We let users decide whether ROI should remain visible on final rendered video.
+  const [showRoiOverlayOnVideo, setShowRoiOverlayOnVideo] = useState(false);
+
   // We track loading state for submit button.
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,6 +47,7 @@ export function JobUpload({ onJobCreated }: JobUploadProps) {
         sourcePath,
         cameraConfigId: "camera.default",
         hideOutsideRoiOverlays,
+        showRoiOverlayOnVideo,
       });
 
       // We notify parent so polling can begin.
@@ -85,6 +89,15 @@ export function JobUpload({ onJobCreated }: JobUploadProps) {
             onChange={(e) => setHideOutsideRoiOverlays(e.target.checked)}
           />
           <span>Masinile din afara ROI raman blurate, dar fara cadru si text</span>
+        </label>
+
+        <label className="upload-toggle-row">
+          <input
+            type="checkbox"
+            checked={showRoiOverlayOnVideo}
+            onChange={(e) => setShowRoiOverlayOnVideo(e.target.checked)}
+          />
+          <span>Afiseaza conturul ROI pe video-ul final</span>
         </label>
 
         <button className="btn-primary" type="submit" disabled={isSubmitting}>

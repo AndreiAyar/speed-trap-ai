@@ -30,24 +30,37 @@ anchor_point: "bottom_center"
 # Two-line speed gate in frame coordinates (pixels).
 
 #giroc-> padure line + roy -> 20.2 meters
+# line_a:
+#   - [500, 556]
+#   - [1024, 556]
+
+# line_b:
+#   - [500, 610]
+#   - [1024, 610]
+
+# roi_polygon:
+#   - [500, 500]
+#   - [900, 540]
+#   - [1919, 900]
+#   - [100, 1079]
+
+
+
+
+#lidl-> eso giroc line + roy -> 20.2 meters
 line_a:
-  - [500, 556]
-  - [1024, 556]
+  - [400, 670]
+  - [670, 639]
 
 line_b:
-  - [500, 610]
-  - [1024, 610]
+  - [590, 728]
+  - [900, 687]
 
 roi_polygon:
-  - [500, 500]
-  - [900, 540]
-  - [1919, 900]
-  - [100, 1079]
-
-
-
-
-#
+  - [50, 570]
+  - [140, 560]
+  - [1919, 800]
+  - [1730, 1079]
 
 
 # line_a:
@@ -69,7 +82,7 @@ distance_meters: 20.2
 
 # Optional ROI polygon to restrict analysis area.
 # If empty, full frame is used.
-roi_polygon:
+# roi_polygon:
   # ROI tuned for monitored carriageway (vehicles approaching camera) in 3840x2160 frame.
   # - [1320, 620]
   # - [2620, 620]

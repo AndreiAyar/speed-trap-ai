@@ -16,6 +16,8 @@ export interface CreateJobPayload {
   cameraConfigId?: string;
   // When true, detections outside ROI stay blurred but are no longer outlined.
   hideOutsideRoiOverlays?: boolean;
+  // When true, the final rendered video shows the ROI polygon outline.
+  showRoiOverlayOnVideo?: boolean;
 }
 
 // Type for create job response.

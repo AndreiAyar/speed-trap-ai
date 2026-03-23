@@ -49,6 +49,64 @@ const SLOT_ORDER: SlotKey[] = [...LINE_SLOT_ORDER, ...ROI_SLOT_ORDER];
 // We use a practical local sample path when no suggested URL exists yet.
 const DEFAULT_CALIBRATION_PATH = "/Users/ayar/Personal Dev/speed-trap-ai/data/input/sample.mp4";
 
+// This helper formats one native point into YAML list item text.
+function formatYamlPoint(point: Point): string {
+  return `  - [${point.x}, ${point.y}]`;
+}
+
+// This helper extracts one top-level YAML block by key from pasted config text.
+function extractTopLevelYamlBlock(source: string, key: string): string {
+  // We split into lines so we can stop at the next top-level key.
+  const lines = source.split(/\r?\n/);
+
+  // We search for the requested top-level key first.
+  const startIndex = lines.findIndex((line) => new RegExp(`^\\s*${key}\\s*:`).test(line));
+  if (startIndex < 0) {
+    return "";
+  }
+
+  // We collect the key line and its indented children.
+  const collected: string[] = [];
+  for (let index = startIndex; index < lines.length; index += 1) {
+    const line = lines[index];
+
+    // We stop when a new top-level key begins after the target block.
+    if (
+      index > startIndex &&
+      /^[A-Za-z_][A-Za-z0-9_]*\s*:/.test(line) &&
+      !/^\s/.test(line)
+    ) {
+      break;
+    }
+
+    collected.push(line);
+  }
+
+  // We return the joined YAML fragment for downstream coordinate parsing.
+  return collected.join("\n");
+}
+
+// This helper parses YAML-like coordinate lists such as "- [100, 200]".
+function parseYamlPointList(source: string, key: string, expectedCount: number): Point[] | null {
+  // We isolate the relevant YAML block first.
+  const block = extractTopLevelYamlBlock(source, key);
+  if (!block) {
+    return null;
+  }
+
+  // We collect all coordinate pairs from the block in written order.
+  const matches = [...block.matchAll(/\[\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]/g)];
+  if (matches.length < expectedCount) {
+    return null;
+  }
+
+  // We convert coordinates to rounded integer native pixels.
+  return matches.slice(0, expectedCount).map((match) => ({
+    x: Math.round(Number(match[1])),
+    y: Math.round(Number(match[2])),
+  }));
+}
+
 // Component props allow parent to suggest a default video URL or local path.
 interface LineCalibrationToolProps {
   // Optional pre-filled URL/path from processed job artifacts.
@@ -116,6 +174,14 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
 
   // We hold ref to stage wrapper where pointer events are captured.
   const stageRef = useRef<HTMLDivElement | null>(null);
+
+  // We keep a writable YAML area so pasted camera settings can drive the preview.
+  const [yamlEditorValue, setYamlEditorValue] = useState(
+    "line_a:\n  - [x1, y1]\n  - [x2, y2]\n\nline_b:\n  - [x1, y1]\n  - [x2, y2]\n\nroi_polygon:\n  - [x1, y1]\n  - [x2, y2]\n  - [x3, y3]\n  - [x4, y4]"
+  );
+
+  // We store parser feedback near the YAML editor for confidence while calibrating.
+  const [yamlEditorMessage, setYamlEditorMessage] = useState<string | null>(null);
 
   // This helper writes text drafts without forcing immediate numeric parsing.
   const updatePointDraft = (slot: SlotKey, axis: keyof Point, rawValue: string) => {
@@ -291,25 +357,69 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
   const clearPoints = () => {
     setPoints({ a1: null, a2: null, b1: null, b2: null, r1: null, r2: null, r3: null, r4: null });
     setActiveSlot("a1");
+    setYamlEditorMessage(null);
   };
 
   // We compute YAML snippet for easy copy into camera config.
   const yamlSnippet = useMemo(() => {
-    const lineA = points.a1 && points.a2 ? `line_a:\n  - [${points.a1.x}, ${points.a1.y}]\n  - [${points.a2.x}, ${points.a2.y}]` : "line_a:\n  - [x1, y1]\n  - [x2, y2]";
-    const lineB = points.b1 && points.b2 ? `line_b:\n  - [${points.b1.x}, ${points.b1.y}]\n  - [${points.b2.x}, ${points.b2.y}]` : "line_b:\n  - [x1, y1]\n  - [x2, y2]";
+    const lineA = points.a1 && points.a2
+      ? `line_a:\n${formatYamlPoint(points.a1)}\n${formatYamlPoint(points.a2)}`
+      : "line_a:\n  - [x1, y1]\n  - [x2, y2]";
+    const lineB = points.b1 && points.b2
+      ? `line_b:\n${formatYamlPoint(points.b1)}\n${formatYamlPoint(points.b2)}`
+      : "line_b:\n  - [x1, y1]\n  - [x2, y2]";
     const roiPolygon = ROI_SLOT_ORDER.every((slot) => points[slot])
-      ? `roi_polygon:\n  - [${points.r1!.x}, ${points.r1!.y}]\n  - [${points.r2!.x}, ${points.r2!.y}]\n  - [${points.r3!.x}, ${points.r3!.y}]\n  - [${points.r4!.x}, ${points.r4!.y}]`
+      ? `roi_polygon:\n${formatYamlPoint(points.r1!)}\n${formatYamlPoint(points.r2!)}\n${formatYamlPoint(points.r3!)}\n${formatYamlPoint(points.r4!)}`
       : "roi_polygon:\n  - [x1, y1]\n  - [x2, y2]\n  - [x3, y3]\n  - [x4, y4]";
     return `${lineA}\n\n${lineB}\n\n${roiPolygon}`;
   }, [points]);
 
+  // We keep the text editor synced with the latest calibrated points.
+  useEffect(() => {
+    setYamlEditorValue(yamlSnippet);
+  }, [yamlSnippet]);
+
   // This helper copies generated YAML to clipboard when available.
   const copyYaml = async () => {
     try {
-      await navigator.clipboard.writeText(yamlSnippet);
+      await navigator.clipboard.writeText(yamlEditorValue);
     } catch {
       // We silently ignore clipboard failures in restricted contexts.
     }
+  };
+
+  // This helper applies pasted YAML coordinates to the live calibration preview.
+  const applyYamlToPreview = () => {
+    const parsedLineA = parseYamlPointList(yamlEditorValue, "line_a", 2);
+    const parsedLineB = parseYamlPointList(yamlEditorValue, "line_b", 2);
+    const parsedRoi = parseYamlPointList(yamlEditorValue, "roi_polygon", 4);
+
+    // We require at least one valid section so accidental paste does not wipe points.
+    if (!parsedLineA && !parsedLineB && !parsedRoi) {
+      setYamlEditorMessage("Nu am gasit coordonate valide pentru line_a, line_b sau roi_polygon.");
+      return;
+    }
+
+    // We merge only sections that were successfully parsed from pasted config.
+    setPoints((previous) => ({
+      ...previous,
+      a1: parsedLineA?.[0] ?? previous.a1,
+      a2: parsedLineA?.[1] ?? previous.a2,
+      b1: parsedLineB?.[0] ?? previous.b1,
+      b2: parsedLineB?.[1] ?? previous.b2,
+      r1: parsedRoi?.[0] ?? previous.r1,
+      r2: parsedRoi?.[1] ?? previous.r2,
+      r3: parsedRoi?.[2] ?? previous.r3,
+      r4: parsedRoi?.[3] ?? previous.r4,
+    }));
+
+    // We confirm how many sections were updated for user confidence.
+    const updatedSections = [
+      parsedLineA ? "Linia A" : null,
+      parsedLineB ? "Linia B" : null,
+      parsedRoi ? "ROI" : null,
+    ].filter(Boolean);
+    setYamlEditorMessage(`${updatedSections.join(", ")} au fost aplicate pe preview.`);
   };
 
   // This helper converts native point to display point for SVG drawing.
@@ -580,6 +690,9 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
           </section>
 
           <div className="calibration-actions">
+            <button type="button" className="btn-secondary" onClick={applyYamlToPreview}>
+              Apply pasted YAML
+            </button>
             <button type="button" className="btn-primary" onClick={copyYaml}>
               Copy YAML
             </button>
@@ -588,7 +701,21 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
             </button>
           </div>
 
-          <pre className="calibration-yaml-preview">{yamlSnippet}</pre>
+          <label className="field-label" htmlFor="calibrationYamlEditor">
+            YAML editor / paste box
+          </label>
+          <textarea
+            id="calibrationYamlEditor"
+            className="calibration-yaml-editor"
+            value={yamlEditorValue}
+            onChange={(event) => {
+              setYamlEditorValue(event.target.value);
+              setYamlEditorMessage(null);
+            }}
+            spellCheck={false}
+          />
+
+          {yamlEditorMessage ? <p className="calibration-editor-message">{yamlEditorMessage}</p> : null}
 
           {loadError ? <p className="error-text">{loadError}</p> : null}
         </aside>

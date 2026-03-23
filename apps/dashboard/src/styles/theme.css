@@ -693,7 +693,7 @@ body {
 }
 
 /* YAML preview uses monospace and subtle background for copy confidence. */
-.calibration-yaml-preview {
+.calibration-yaml-editor {
   margin: 0;
   border: 1px solid #decfbf;
   border-radius: 10px;
@@ -703,6 +703,20 @@ body {
   font-size: 0.8rem;
   line-height: 1.45;
   white-space: pre-wrap;
+  min-height: 220px;
+  resize: vertical;
+}
+
+/* Editor message gives immediate feedback after pasted config is applied. */
+.calibration-editor-message {
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid rgba(49, 171, 81, 0.28);
+  border-radius: 10px;
+  background: rgba(49, 171, 81, 0.1);
+  color: #285f36;
+  font-size: 0.83rem;
+  font-weight: 700;
 }
 
 /* Panel title style for section hierarchy. */
