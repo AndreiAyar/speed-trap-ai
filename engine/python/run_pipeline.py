@@ -210,6 +210,11 @@ def main():
         default=None,
         help="When true, detections outside ROI remain blurred but are not outlined or labeled.",
     )
+    parser.add_argument(
+        "--show-roi-overlay-on-video",
+        default=None,
+        help="When true, the final rendered video keeps the ROI polygon visible.",
+    )
     args = parser.parse_args()
 
     # We make sure output folder exists.
@@ -270,6 +275,12 @@ def main():
         default=bool(cfg.get("hide_outside_roi_overlays", True)),
     )
 
+    # We optionally keep ROI visible in the final rendered overlay video.
+    show_roi_overlay_on_video = parse_cli_bool(
+        args.show_roi_overlay_on_video,
+        default=bool(cfg.get("show_roi_overlay_on_video", False)),
+    )
+
     # We resolve the requested inference device once so the whole run is consistent.
     requested_device = str(cfg.get("device", "auto"))
     active_device, device_note = resolve_inference_device(requested_device)
@@ -319,7 +330,8 @@ def main():
         draw_speed_gate_overlay(frame, cfg["line_a"], cfg["line_b"], cfg.get("disclaimer_text", "Estimare AI"))
 
         # We draw ROI boundary if configured.
-        draw_roi(frame, cfg.get("roi_polygon", []))
+        if show_roi_overlay_on_video:
+            draw_roi(frame, cfg.get("roi_polygon", []))
 
         # We iterate each detection in current frame.
         for det in detections:
@@ -478,6 +490,7 @@ def main():
         "distanceMeters": cfg.get("distance_meters"),
         "privacyBlur": bool(cfg.get("privacy_blur", True)),
         "hideOutsideRoiOverlays": hide_outside_roi_overlays,
+        "showRoiOverlayOnVideo": show_roi_overlay_on_video,
         "artifacts": artifact_paths,
         "numEvents": len(events),
         "numTracks": len(summary_rows),

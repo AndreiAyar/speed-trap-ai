@@ -13,6 +13,8 @@ export interface CreateJobRequest {
   cameraConfigId?: string;
   // When true, tracks outside ROI keep blur but lose box/label/trail overlays.
   hideOutsideRoiOverlays?: boolean;
+  // When true, the output overlay video keeps the ROI border visible.
+  showRoiOverlayOnVideo?: boolean;
 }
 
 // Job artifact paths produced by Python engine.
