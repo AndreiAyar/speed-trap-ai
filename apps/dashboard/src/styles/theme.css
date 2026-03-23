@@ -507,13 +507,13 @@ body {
 /* Visual style for Line A in calibration overlay. */
 .cal-line-a {
   stroke: #08d9ff;
-  stroke-width: 3;
+  stroke-width: 1;
 }
 
 /* Visual style for Line B in calibration overlay. */
 .cal-line-b {
   stroke: #ffb10a;
-  stroke-width: 3;
+  stroke-width: 1;
 }
 
 /* Endpoint marker style for clicked points. */
