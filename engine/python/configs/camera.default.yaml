@@ -48,13 +48,23 @@ anchor_point: "bottom_center"
 
 
 #lidl-> eso giroc line + roy -> 20.2 meters
+#v1 line
+# line_a:
+#   - [400, 670]
+#   - [670, 639]
+
+# line_b:
+#   - [590, 728]
+#   - [900, 687]
+
+#v2 line
 line_a:
-  - [400, 670]
-  - [670, 639]
+  - [400, 672]
+  - [670, 643]
 
 line_b:
-  - [590, 728]
-  - [900, 687]
+  - [590, 723]
+  - [900, 684]
 
 roi_polygon:
   - [50, 570]
