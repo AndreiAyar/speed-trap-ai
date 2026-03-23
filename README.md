@@ -68,6 +68,7 @@ A vehicle can appear in the video and still not receive a speed if:
 - Tracker: `ByteTrack`
 - Privacy blur: enabled by default
 - Anchor point: `bottom_center`
+- Device: `auto` (`MPS` on Apple Silicon when available, otherwise CPU)
 
 Main scene config:
 
@@ -83,6 +84,7 @@ Important config fields:
 - `anchor_point`
 - `privacy_blur`
 - `trail_enabled`
+- `device`
 
 ## Prerequisites
 

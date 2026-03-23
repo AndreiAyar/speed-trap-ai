@@ -14,6 +14,8 @@ export interface CreateJobPayload {
   sourcePath: string;
   // Optional config id for future multi-scene support.
   cameraConfigId?: string;
+  // When true, detections outside ROI stay blurred but are no longer outlined.
+  hideOutsideRoiOverlays?: boolean;
 }
 
 // Type for create job response.

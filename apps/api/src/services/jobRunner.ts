@@ -165,6 +165,8 @@ async function runJobInternal(jobId: string, request: CreateJobRequest, jobOutpu
     configPath,
     "--out",
     jobOutputDir,
+    "--hide-outside-roi-overlays",
+    request.hideOutsideRoiOverlays === false ? "false" : "true",
   ];
 
   // We select python executable with environment override priority.

@@ -17,6 +17,9 @@ export function JobUpload({ onJobCreated }: JobUploadProps) {
   // We keep source path input as local state.
   const [sourcePath, setSourcePath] = useState("/Users/ayar/Personal Dev/speed-trap-ai/data/input/sample.mp4");
 
+  // We let users hide visual overlays for cars outside ROI while keeping blur.
+  const [hideOutsideRoiOverlays, setHideOutsideRoiOverlays] = useState(true);
+
   // We track loading state for submit button.
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,6 +43,7 @@ export function JobUpload({ onJobCreated }: JobUploadProps) {
         sourceType: "file",
         sourcePath,
         cameraConfigId: "camera.default",
+        hideOutsideRoiOverlays,
       });
 
       // We notify parent so polling can begin.
@@ -73,6 +77,15 @@ export function JobUpload({ onJobCreated }: JobUploadProps) {
           placeholder="/absolute/path/to/video.mp4"
           required
         />
+
+        <label className="upload-toggle-row">
+          <input
+            type="checkbox"
+            checked={hideOutsideRoiOverlays}
+            onChange={(e) => setHideOutsideRoiOverlays(e.target.checked)}
+          />
+          <span>Masinile din afara ROI raman blurate, dar fara cadru si text</span>
+        </label>
 
         <button className="btn-primary" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Pornire job..." : "Porneste procesare"}

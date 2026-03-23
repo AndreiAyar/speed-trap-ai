@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 
 # typing clarifies in-memory data structures.
 from typing import Dict, List
@@ -25,10 +26,31 @@ import numpy as np
 import yaml
 
 # We import engine modules for pipeline tasks.
-from modules.detect_track import iter_tracked_frames, read_video_fps
+from modules.detect_track import iter_tracked_frames, read_video_fps, resolve_inference_device
 from modules.exporters import build_artifact_paths, ensure_dir, write_events_jsonl, write_metadata_json, write_summary_csv
 from modules.privacy_blur import blur_bbox_region
 from modules.speed_gate import TwoLineSpeedGate
+
+
+# This helper parses flexible CLI booleans like true/false/1/0/on/off.
+def parse_cli_bool(raw_value: str, default: bool = False) -> bool:
+    # We normalize missing values into the provided default.
+    if raw_value is None:
+        return bool(default)
+
+    # We lowercase and trim user input for robust matching.
+    normalized = str(raw_value).strip().lower()
+
+    # We accept common truthy strings to keep CLI ergonomic.
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+
+    # We accept common falsy strings to keep CLI ergonomic.
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+
+    # We fallback to default for unexpected values.
+    return bool(default)
 
 
 # This helper converts bbox to anchor point used for line crossing logic.
@@ -183,6 +205,11 @@ def main():
     parser.add_argument("--input", required=True, help="Path to input video file")
     parser.add_argument("--config", required=True, help="Path to YAML camera config")
     parser.add_argument("--out", required=True, help="Output job folder")
+    parser.add_argument(
+        "--hide-outside-roi-overlays",
+        default=None,
+        help="When true, detections outside ROI remain blurred but are not outlined or labeled.",
+    )
     args = parser.parse_args()
 
     # We make sure output folder exists.
@@ -237,6 +264,22 @@ def main():
     # We read anchor-point debug overlay flag from scene config.
     show_anchor_point = bool(cfg.get("show_anchor_point", True))
 
+    # We optionally keep outside-ROI vehicles blurred without drawing overlay noise.
+    hide_outside_roi_overlays = parse_cli_bool(
+        args.hide_outside_roi_overlays,
+        default=bool(cfg.get("hide_outside_roi_overlays", True)),
+    )
+
+    # We resolve the requested inference device once so the whole run is consistent.
+    requested_device = str(cfg.get("device", "auto"))
+    active_device, device_note = resolve_inference_device(requested_device)
+
+    # We print the chosen device to stderr so terminal users see it without breaking stdout JSON.
+    print(
+        f"[speed-trap-ai] Device requested: {requested_device} | using: {active_device} | {device_note}",
+        file=sys.stderr,
+    )
+
     # We iterate tracked frames from detector/tracker pipeline.
     for item in iter_tracked_frames(
         source_path=args.input,
@@ -245,6 +288,7 @@ def main():
         tracker=cfg.get("tracker", "bytetrack.yaml"),
         classes=allowed_classes,
         conf_threshold=float(cfg.get("conf_threshold", 0.25)),
+        device=active_device,
     ):
         # We unpack frame index from iterator payload.
         frame_index = item["frame_index"]
@@ -297,6 +341,11 @@ def main():
 
             # We update gate state and optionally get speed.
             gate_info = gate.update_track(track_id=track_id, center=center, timestamp_ms=timestamp_ms)
+
+            # We hide overlays outside ROI while keeping a blur cue for privacy and focus.
+            if not bool(gate_info.get("inside_roi", False)) and hide_outside_roi_overlays:
+                frame = blur_bbox_region(frame, bbox)
+                continue
 
             # We update per-track trail points for visual movement history.
             if trail_enabled:
@@ -423,8 +472,12 @@ def main():
         "modelPrimary": cfg.get("model_primary", "yolo26n.pt"),
         "modelFallback": cfg.get("model_fallback", "yolo11n.pt"),
         "tracker": cfg.get("tracker", "bytetrack.yaml"),
+        "deviceRequested": requested_device,
+        "deviceUsed": active_device,
+        "deviceNote": device_note,
         "distanceMeters": cfg.get("distance_meters"),
         "privacyBlur": bool(cfg.get("privacy_blur", True)),
+        "hideOutsideRoiOverlays": hide_outside_roi_overlays,
         "artifacts": artifact_paths,
         "numEvents": len(events),
         "numTracks": len(summary_rows),

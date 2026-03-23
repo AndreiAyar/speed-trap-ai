@@ -11,6 +11,8 @@ export interface CreateJobRequest {
   sourcePath: string;
   // Camera config id maps to engine config file.
   cameraConfigId?: string;
+  // When true, tracks outside ROI keep blur but lose box/label/trail overlays.
+  hideOutsideRoiOverlays?: boolean;
 }
 
 // Job artifact paths produced by Python engine.
