@@ -51,6 +51,11 @@ export interface JobResponse {
   createdAt: string;
   // Optional timestamp when job finished or failed.
   finishedAt?: string;
+  // Optional engine metadata returned by backend when available.
+  metadata?: {
+    // FPS value detected from the input file and used during processing.
+    fps?: number;
+  };
 }
 
 // Type for recent jobs list payload.

@@ -44,7 +44,35 @@ anchor_point: "bottom_center"
 #   - [1919, 900]
 #   - [100, 1079]
 
+#giroc -> padure -> alta linie mai calibrata mai buna pe asta mergem 100%
+# line_a:
+#   - [564, 595]
+#   - [940, 555]
 
+# line_b:
+#   - [636, 690]
+#   - [1166, 636]
+
+# roi_polygon:
+#   - [511, 457]
+#   - [1918, 847]
+#   - [1916, 1071]
+#   - [61, 1079]
+
+#giroc 1.5 video nume -> padure -> alta linie mai calibrata mai buna pe asta mergem 100%
+# line_a:
+#   - [1155, 1194]
+#   - [1860, 1100]
+
+# line_b:
+#   - [1240, 1398]
+#   - [2275, 1264]
+
+# roi_polygon:
+#   - [1068, 764]
+#   - [3835, 1655]
+#   - [3839, 2158]
+#   - [593, 2159]
 
 
 #lidl-> eso giroc line + roy -> 20.2 meters
@@ -59,8 +87,8 @@ anchor_point: "bottom_center"
 
 #v2 line
 # line_a:
-#   - [400, 672]
-#   - [670, 643]
+#   - [401, 673]
+#   - [671, 644]
 
 # line_b:
 #   - [590, 723]
@@ -72,20 +100,80 @@ anchor_point: "bottom_center"
 #   - [1919, 800]
 #   - [1730, 1079]
 
-#mc spre eso line cu roi -> 16.9M
+#v3 -> proving the point video video 3 
+# line_a:
+#   - [1215, 1338]
+#   - [1717, 1294]
+
+# line_b:
+#   - [1700, 1459]
+#   - [2279, 1368]
+
+# roi_polygon:
+#   - [536, 1092]
+#   - [3839, 1570]
+#   - [3839, 2099]
+#   - [3, 2159]
+
+#v4 -> another point on video 3
 line_a:
-  - [945, 1100]
-  - [1900, 1077]
+  - [1382, 1348]
+  - [1580, 1275]
 
 line_b:
-  - [590, 1210]
-  - [1900, 1203]
+  - [1893, 1455]
+  - [2137, 1365]
 
 roi_polygon:
-  - [0, 2159]
-  - [0, 1200]
-  - [1919, 800]
-  - [1930, 2159]
+  - [536, 1092]
+  - [3839, 1570]
+  - [3839, 2099]
+  - [3, 2159]
+
+#mc spre eso line cu roi -> 16.9M
+# line_a:
+#   - [945, 1100]
+#   - [1900, 1077]
+
+# line_b:
+#   - [590, 1210]
+#   - [1900, 1203]
+
+# roi_polygon:
+#   - [0, 2159]
+#   - [0, 1200]
+#   - [1919, 800]
+#   - [1930, 2159]
+
+#v2
+# line_a:
+#   - [858, 1098]
+#   - [1875, 1089]
+
+# line_b:
+#   - [503, 1215]
+#   - [1813, 1208]
+
+# roi_polygon:
+#   - [0, 2159]
+#   - [0, 1200]
+#   - [1919, 800]
+#   - [1930, 2159]
+
+#v3 same video t_1_om sens opus
+# line_a:
+#   - [1977, 1218]
+#   - [3045, 1209]
+
+# line_b:
+#   - [1888, 1106]
+#   - [2672, 1100]
+
+# roi_polygon:
+#   - [1909, 2159]
+#   - [1905, 959]
+#   - [3828, 800]
+#   - [3839, 2159]
 
 
 # line_a:
@@ -98,7 +186,7 @@ roi_polygon:
 
 # Real-world distance (meters) between line A and line B.
 # You should measure this once per scene.
-distance_meters: 16.9
+distance_meters: 20.2 #16.9 #21 #16.9
 # ROI (Region of Interest) - Defines a polygonal area within the video frame where analysis should be performed.
 # Only objects and events detected within this polygon will be processed by the detection engine.
 # Leave empty to analyze the entire video frame without spatial restrictions.

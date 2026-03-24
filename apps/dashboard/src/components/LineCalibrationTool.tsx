@@ -22,6 +22,28 @@ interface PointDraft {
   y: string;
 }
 
+// Drag state tracks what overlay shape is currently being moved by pointer.
+interface DragInteraction {
+  // Drag kind decides whether one point, one line, or the whole ROI moves.
+  kind: "point" | "line" | "roi";
+  // Pointer id keeps drag stable even on touch/pen capable devices.
+  pointerId: number;
+  // Slots affected by the current drag action.
+  slots: SlotKey[];
+  // Native frame position where drag started.
+  startPointer: Point;
+  // Snapshot of original points before drag begins.
+  initialPoints: Partial<Record<SlotKey, Point>>;
+}
+
+// Point-hit records keep the closest draggable point under the pointer.
+interface PointHitMatch {
+  // Matching slot key for the nearest point.
+  slot: SlotKey;
+  // Display-space distance from pointer to that point.
+  distance: number;
+}
+
 // Slot keys represent the four required line endpoints.
 type SlotKey = "a1" | "a2" | "b1" | "b2" | "r1" | "r2" | "r3" | "r4";
 
@@ -136,6 +158,9 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
   // We store active selection slot where next click writes coordinates.
   const [activeSlot, setActiveSlot] = useState<SlotKey>("a1");
 
+  // We store explicit point selection so one point can be nudged precisely.
+  const [selectedSlot, setSelectedSlot] = useState<SlotKey | null>(null);
+
   // We allow line editors to collapse so the preview stays more visible.
   const [showLineSection, setShowLineSection] = useState(false);
 
@@ -175,6 +200,9 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
   // We hold ref to stage wrapper where pointer events are captured.
   const stageRef = useRef<HTMLDivElement | null>(null);
 
+  // We keep current drag interaction while user repositions geometry on overlay.
+  const [dragInteraction, setDragInteraction] = useState<DragInteraction | null>(null);
+
   // We keep a writable YAML area so pasted camera settings can drive the preview.
   const [yamlEditorValue, setYamlEditorValue] = useState(
     "line_a:\n  - [x1, y1]\n  - [x2, y2]\n\nline_b:\n  - [x1, y1]\n  - [x2, y2]\n\nroi_polygon:\n  - [x1, y1]\n  - [x2, y2]\n  - [x3, y3]\n  - [x4, y4]"
@@ -182,6 +210,9 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
 
   // We store parser feedback near the YAML editor for confidence while calibrating.
   const [yamlEditorMessage, setYamlEditorMessage] = useState<string | null>(null);
+
+  // We keep fine-adjustment step configurable for precise point edits.
+  const [nudgeStep, setNudgeStep] = useState(1);
 
   // This helper writes text drafts without forcing immediate numeric parsing.
   const updatePointDraft = (slot: SlotKey, axis: keyof Point, rawValue: string) => {
@@ -245,6 +276,10 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
         [axis]: String(clampedValue),
       },
     }));
+
+    // We keep manual edits aligned with selection for follow-up nudging.
+    setActiveSlot(slot);
+    setSelectedSlot(slot);
   };
 
   // We optionally auto-load suggested URL only while input still matches the default sample path.
@@ -296,11 +331,11 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
     };
   }, [videoUrl]);
 
-  // This helper maps pointer client coordinates to native video coordinates.
-  const pointerToNative = (clientX: number, clientY: number): Point | null => {
+  // This helper maps pointer client coordinates to overlay-local display pixels.
+  const pointerToStageLocal = (clientX: number, clientY: number): Point | null => {
     const stage = stageRef.current;
-    if (!stage || videoSize.width <= 0 || videoSize.height <= 0) {
-      return null;
+    if (!stage) {
+        return null;
     }
 
     // We get stage rectangle to compute local pointer offsets.
@@ -315,48 +350,47 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
     const localX = Math.min(Math.max(clientX - rect.left, 0), rect.width);
     const localY = Math.min(Math.max(clientY - rect.top, 0), rect.height);
 
+    // We return stage-local point in display coordinates.
+    return { x: localX, y: localY };
+  };
+
+  // This helper maps pointer client coordinates to native video coordinates.
+  const pointerToNative = (clientX: number, clientY: number): Point | null => {
+    const stagePoint = pointerToStageLocal(clientX, clientY);
+    if (!stagePoint || videoSize.width <= 0 || videoSize.height <= 0) {
+      return null;
+    }
+
     // We map local offsets from display space to native video pixels.
-    const x = Math.round((localX / rect.width) * (videoSize.width - 1));
-    const y = Math.round((localY / rect.height) * (videoSize.height - 1));
+    const stage = stageRef.current;
+    const rect = stage?.getBoundingClientRect();
+    if (!rect || rect.width <= 0 || rect.height <= 0) {
+      return null;
+    }
+
+    const x = Math.round((stagePoint.x / rect.width) * (videoSize.width - 1));
+    const y = Math.round((stagePoint.y / rect.height) * (videoSize.height - 1));
 
     // We return converted native point.
     return { x, y };
   };
 
-  // This handler updates live cursor coordinates while hovering stage.
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const next = pointerToNative(event.clientX, event.clientY);
-    setCursor(next);
-  };
-
-  // This handler clears cursor state when leaving stage area.
-  const handlePointerLeave = () => {
-    setCursor(null);
-  };
-
-  // This handler writes clicked coordinate into active slot and auto-advances.
-  const handleStageClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    const point = pointerToNative(event.clientX, event.clientY);
-    if (!point) {
-      return;
-    }
-
-    // We write selected point into currently active slot.
-    setPoints((previous) => ({
-      ...previous,
-      [activeSlot]: point,
-    }));
-
-    // We auto-advance selection to the next slot for faster setup.
-    const currentIndex = SLOT_ORDER.indexOf(activeSlot);
-    const nextIndex = (currentIndex + 1) % SLOT_ORDER.length;
-    setActiveSlot(SLOT_ORDER[nextIndex]);
+  // This helper clamps one point to the loaded video bounds.
+  const clampPointToVideo = (point: Point): Point => {
+    const maxX = Math.max(videoSize.width - 1, 0);
+    const maxY = Math.max(videoSize.height - 1, 0);
+    return {
+      x: Math.min(Math.max(Math.round(point.x), 0), maxX || Math.round(point.x)),
+      y: Math.min(Math.max(Math.round(point.y), 0), maxY || Math.round(point.y)),
+    };
   };
 
   // This helper clears all selected points in one action.
   const clearPoints = () => {
     setPoints({ a1: null, a2: null, b1: null, b2: null, r1: null, r2: null, r3: null, r4: null });
     setActiveSlot("a1");
+    setSelectedSlot(null);
+    setDragInteraction(null);
     setYamlEditorMessage(null);
   };
 
@@ -451,6 +485,292 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
     ? ROI_SLOT_ORDER.map((slot) => `${displayPoints[slot]!.x},${displayPoints[slot]!.y}`).join(" ")
     : "";
 
+  // This helper returns the nearest existing point under the pointer, if any.
+  const findNearbySlot = (stagePoint: Point): SlotKey | null => {
+    let bestMatch: PointHitMatch | undefined;
+
+    SLOT_ORDER.forEach((slot) => {
+      const point = displayPoints[slot];
+      if (!point) {
+        return;
+      }
+
+      const distance = Math.hypot(point.x - stagePoint.x, point.y - stagePoint.y);
+      if (distance <= 14 && (!bestMatch || distance < bestMatch.distance)) {
+        bestMatch = { slot, distance };
+      }
+    });
+
+    return bestMatch ? bestMatch.slot : null;
+  };
+
+  // This helper measures display-space distance from a point to one line segment.
+  const distanceToSegment = (point: Point, start: Point, end: Point): number => {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const lengthSquared = dx * dx + dy * dy;
+    if (lengthSquared <= 0) {
+      return Math.hypot(point.x - start.x, point.y - start.y);
+    }
+
+    const t = Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared));
+    const projection = {
+      x: start.x + t * dx,
+      y: start.y + t * dy,
+    };
+    return Math.hypot(point.x - projection.x, point.y - projection.y);
+  };
+
+  // This helper decides whether one of the two draggable lines is under the pointer.
+  const findDraggableLine = (stagePoint: Point): SlotKey[] | null => {
+    const candidates: Array<{ slots: SlotKey[]; distance: number }> = [];
+
+    if (displayPoints.a1 && displayPoints.a2) {
+      candidates.push({
+        slots: ["a1", "a2"],
+        distance: distanceToSegment(stagePoint, displayPoints.a1, displayPoints.a2),
+      });
+    }
+
+    if (displayPoints.b1 && displayPoints.b2) {
+      candidates.push({
+        slots: ["b1", "b2"],
+        distance: distanceToSegment(stagePoint, displayPoints.b1, displayPoints.b2),
+      });
+    }
+
+    const best = candidates
+      .filter((candidate) => candidate.distance <= 10)
+      .sort((left, right) => left.distance - right.distance)[0];
+
+    return best?.slots ?? null;
+  };
+
+  // This helper checks if a display-space point falls inside the displayed ROI polygon.
+  const isInsideDisplayedRoi = (stagePoint: Point): boolean => {
+    const polygonPoints = ROI_SLOT_ORDER.map((slot) => displayPoints[slot]).filter(Boolean) as Point[];
+    if (polygonPoints.length !== ROI_SLOT_ORDER.length) {
+      return false;
+    }
+
+    let inside = false;
+    for (let index = 0; index < polygonPoints.length; index += 1) {
+      const current = polygonPoints[index];
+      const next = polygonPoints[(index + 1) % polygonPoints.length];
+      const intersects = ((current.y > stagePoint.y) !== (next.y > stagePoint.y))
+        && (
+          stagePoint.x
+          < ((next.x - current.x) * (stagePoint.y - current.y)) / ((next.y - current.y) || 1e-9) + current.x
+        );
+      if (intersects) {
+        inside = !inside;
+      }
+    }
+
+    return inside;
+  };
+
+  // This helper stores initial drag geometry for one chosen slot set.
+  const captureInitialPoints = (slots: SlotKey[]): Partial<Record<SlotKey, Point>> => {
+    return slots.reduce<Partial<Record<SlotKey, Point>>>((snapshot, slot) => {
+      if (points[slot]) {
+        snapshot[slot] = points[slot]!;
+      }
+      return snapshot;
+    }, {});
+  };
+
+  // This helper clamps group movement so dragged geometry stays inside video bounds.
+  const clampGroupDelta = (slots: SlotKey[], initialPoints: Partial<Record<SlotKey, Point>>, dx: number, dy: number) => {
+    const slotPoints = slots.map((slot) => initialPoints[slot]).filter(Boolean) as Point[];
+    if (slotPoints.length === 0) {
+      return { dx: 0, dy: 0 };
+    }
+
+    const maxX = Math.max(videoSize.width - 1, 0);
+    const maxY = Math.max(videoSize.height - 1, 0);
+    const minDx = Math.max(...slotPoints.map((point) => -point.x));
+    const maxDx = Math.min(...slotPoints.map((point) => maxX - point.x));
+    const minDy = Math.max(...slotPoints.map((point) => -point.y));
+    const maxDy = Math.min(...slotPoints.map((point) => maxY - point.y));
+
+    return {
+      dx: Math.min(Math.max(Math.round(dx), minDx), maxDx),
+      dy: Math.min(Math.max(Math.round(dy), minDy), maxDy),
+    };
+  };
+
+  // This helper nudges the selected point with a small configurable pixel step.
+  const nudgeSelectedPoint = (axis: keyof Point, delta: number) => {
+    if (!selectedSlot || !points[selectedSlot]) {
+      return;
+    }
+
+    const nextPoint = clampPointToVideo({
+      ...points[selectedSlot]!,
+      [axis]: points[selectedSlot]![axis] + delta,
+    });
+
+    setPoints((previous) => ({
+      ...previous,
+      [selectedSlot]: nextPoint,
+    }));
+  };
+
+  // This helper finds the next still-empty slot after the current active one.
+  const advanceToNextEmptySlot = (currentSlot: SlotKey) => {
+    const currentIndex = SLOT_ORDER.indexOf(currentSlot);
+    for (let offset = 1; offset <= SLOT_ORDER.length; offset += 1) {
+      const candidate = SLOT_ORDER[(currentIndex + offset) % SLOT_ORDER.length];
+      if (!points[candidate]) {
+        setActiveSlot(candidate);
+        return;
+      }
+    }
+  };
+
+  // Pointer-down selects or starts dragging shapes already defined on screen.
+  const handleStagePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const nativePoint = pointerToNative(event.clientX, event.clientY);
+    const stagePoint = pointerToStageLocal(event.clientX, event.clientY);
+    if (!nativePoint || !stagePoint) {
+      return;
+    }
+
+    const nearbySlot = findNearbySlot(stagePoint);
+    if (nearbySlot && points[nearbySlot]) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setSelectedSlot(nearbySlot);
+      setActiveSlot(nearbySlot);
+      setDragInteraction({
+        kind: "point",
+        pointerId: event.pointerId,
+        slots: [nearbySlot],
+        startPointer: nativePoint,
+        initialPoints: captureInitialPoints([nearbySlot]),
+      });
+      return;
+    }
+
+    const draggableLine = findDraggableLine(stagePoint);
+    if (draggableLine) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setSelectedSlot(draggableLine[0]);
+      setActiveSlot(draggableLine[0]);
+      setDragInteraction({
+        kind: "line",
+        pointerId: event.pointerId,
+        slots: draggableLine,
+        startPointer: nativePoint,
+        initialPoints: captureInitialPoints(draggableLine),
+      });
+      return;
+    }
+
+    if (isInsideDisplayedRoi(stagePoint)) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setSelectedSlot("r1");
+      setActiveSlot("r1");
+      setDragInteraction({
+        kind: "roi",
+        pointerId: event.pointerId,
+        slots: ROI_SLOT_ORDER,
+        startPointer: nativePoint,
+        initialPoints: captureInitialPoints(ROI_SLOT_ORDER),
+      });
+      return;
+    }
+
+    // We only place a new point by background click when the active slot is still empty.
+    if (!points[activeSlot]) {
+      const clampedPoint = clampPointToVideo(nativePoint);
+      setPoints((previous) => ({
+        ...previous,
+        [activeSlot]: clampedPoint,
+      }));
+      setSelectedSlot(activeSlot);
+      advanceToNextEmptySlot(activeSlot);
+    }
+  };
+
+  // Pointer-move updates hover metrics and applies drag deltas when active.
+  const handleStagePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const nativePoint = pointerToNative(event.clientX, event.clientY);
+    setCursor(nativePoint);
+
+    if (!dragInteraction || dragInteraction.pointerId !== event.pointerId || !nativePoint) {
+      return;
+    }
+
+    const deltaX = nativePoint.x - dragInteraction.startPointer.x;
+    const deltaY = nativePoint.y - dragInteraction.startPointer.y;
+
+    if (dragInteraction.kind === "point") {
+      const slot = dragInteraction.slots[0];
+      const initialPoint = dragInteraction.initialPoints[slot];
+      if (!slot || !initialPoint) {
+        return;
+      }
+
+      const nextPoint = clampPointToVideo({
+        x: initialPoint.x + deltaX,
+        y: initialPoint.y + deltaY,
+      });
+
+      setPoints((previous) => ({
+        ...previous,
+        [slot]: nextPoint,
+      }));
+      return;
+    }
+
+    const clampedDelta = clampGroupDelta(
+      dragInteraction.slots,
+      dragInteraction.initialPoints,
+      deltaX,
+      deltaY,
+    );
+
+    setPoints((previous) => {
+      const nextPoints = { ...previous };
+      dragInteraction.slots.forEach((slot) => {
+        const initialPoint = dragInteraction.initialPoints[slot];
+        if (!initialPoint) {
+          return;
+        }
+
+        nextPoints[slot] = {
+          x: initialPoint.x + clampedDelta.dx,
+          y: initialPoint.y + clampedDelta.dy,
+        };
+      });
+      return nextPoints;
+    });
+  };
+
+  // Pointer-up ends any active drag and releases capture safely.
+  const handleStagePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setDragInteraction(null);
+  };
+
+  // Pointer-cancel shares the same cleanup path as normal drag end.
+  const handleStagePointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setDragInteraction(null);
+  };
+
+  // Leaving the stage should only clear cursor when no drag is in progress.
+  const handleStagePointerLeave = () => {
+    if (!dragInteraction) {
+      setCursor(null);
+    }
+  };
+
   // We render full calibration panel.
   return (
     <section className="panel panel-calibration">
@@ -487,9 +807,11 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
         <div
           className="calibration-stage"
           ref={stageRef}
-          onMouseMove={handlePointerMove}
-          onMouseLeave={handlePointerLeave}
-          onClick={handleStageClick}
+          onPointerDown={handleStagePointerDown}
+          onPointerMove={handleStagePointerMove}
+          onPointerUp={handleStagePointerUp}
+          onPointerCancel={handleStagePointerCancel}
+          onPointerLeave={handleStagePointerLeave}
         >
           <video
             ref={videoRef}
@@ -521,7 +843,15 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
               <line x1={displayPoints.b1.x} y1={displayPoints.b1.y} x2={displayPoints.b2.x} y2={displayPoints.b2.y} className="cal-line-b" />
             ) : null}
             {Object.entries(displayPoints).map(([key, point]) =>
-              point ? <circle key={key} cx={point.x} cy={point.y} r={6} className="cal-point" /> : null
+              point ? (
+                <circle
+                  key={key}
+                  cx={point.x}
+                  cy={point.y}
+                  r={selectedSlot === key ? 9 : 6}
+                  className={selectedSlot === key ? "cal-point cal-point-active" : "cal-point"}
+                />
+              ) : null
             )}
           </svg>
         </div>
@@ -562,7 +892,11 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
             id="slotSelect"
             className="field-input"
             value={activeSlot}
-            onChange={(event) => setActiveSlot(event.target.value as SlotKey)}
+            onChange={(event) => {
+              const nextSlot = event.target.value as SlotKey;
+              setActiveSlot(nextSlot);
+              setSelectedSlot(nextSlot);
+            }}
           >
             {SLOT_ORDER.map((slot) => (
               <option key={slot} value={slot}>
@@ -570,6 +904,50 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
               </option>
             ))}
           </select>
+
+          {selectedSlot && points[selectedSlot] ? (
+            <section className="calibration-section-card">
+              <div className="calibration-section-heading">
+                <span>Selected point</span>
+                <span className="calibration-section-note">{SLOT_LABELS[selectedSlot]}</span>
+              </div>
+
+              <div className="calibration-selected-point-meta">
+                <span>X: {points[selectedSlot]!.x}</span>
+                <span>Y: {points[selectedSlot]!.y}</span>
+              </div>
+
+              <label className="calibration-point-input-group">
+                <span>Step (px)</span>
+                <input
+                  className="calibration-number-input"
+                  type="number"
+                  min={1}
+                  value={nudgeStep}
+                  onChange={(event) => setNudgeStep(Math.max(1, Number(event.target.value) || 1))}
+                />
+              </label>
+
+              <div className="calibration-nudge-grid">
+                <button type="button" className="btn-secondary calibration-nudge-btn" onClick={() => nudgeSelectedPoint("x", -nudgeStep)}>
+                  X -{nudgeStep}
+                </button>
+                <button type="button" className="btn-secondary calibration-nudge-btn" onClick={() => nudgeSelectedPoint("x", nudgeStep)}>
+                  X +{nudgeStep}
+                </button>
+                <button type="button" className="btn-secondary calibration-nudge-btn" onClick={() => nudgeSelectedPoint("y", -nudgeStep)}>
+                  Y -{nudgeStep}
+                </button>
+                <button type="button" className="btn-secondary calibration-nudge-btn" onClick={() => nudgeSelectedPoint("y", nudgeStep)}>
+                  Y +{nudgeStep}
+                </button>
+              </div>
+
+              <p className="calibration-editor-hint">
+                Drag punctul, trage linia direct din segment sau muta tot ROI-ul din interiorul poligonului.
+              </p>
+            </section>
+          ) : null}
 
           <section className="calibration-section-card">
             <button
@@ -588,7 +966,7 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
             {showLineSection ? (
               <div className="calibration-points-list">
                 {LINE_SLOT_ORDER.map((slot) => (
-                  <div key={slot} className={`calibration-point-row ${activeSlot === slot ? "calibration-point-row-active" : ""}`}>
+                  <div key={slot} className={`calibration-point-row ${activeSlot === slot || selectedSlot === slot ? "calibration-point-row-active" : ""}`}>
                     <span className="calibration-point-label">{SLOT_LABELS[slot]}</span>
                     <div className="calibration-point-inputs">
                       <label className="calibration-point-input-group">
@@ -599,6 +977,10 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
                           value={pointDrafts[slot].x}
                           placeholder="x"
                           onChange={(event) => updatePointDraft(slot, "x", event.target.value)}
+                          onFocus={() => {
+                            setActiveSlot(slot);
+                            setSelectedSlot(slot);
+                          }}
                           onBlur={() => commitPointAxis(slot, "x")}
                           onKeyDown={(event) => {
                             if (event.key === "Enter") {
@@ -615,6 +997,10 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
                           value={pointDrafts[slot].y}
                           placeholder="y"
                           onChange={(event) => updatePointDraft(slot, "y", event.target.value)}
+                          onFocus={() => {
+                            setActiveSlot(slot);
+                            setSelectedSlot(slot);
+                          }}
                           onBlur={() => commitPointAxis(slot, "y")}
                           onKeyDown={(event) => {
                             if (event.key === "Enter") {
@@ -647,7 +1033,7 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
             {showRoiSection ? (
               <div className="calibration-points-list">
                 {ROI_SLOT_ORDER.map((slot) => (
-                  <div key={slot} className={`calibration-point-row ${activeSlot === slot ? "calibration-point-row-active" : ""}`}>
+                  <div key={slot} className={`calibration-point-row ${activeSlot === slot || selectedSlot === slot ? "calibration-point-row-active" : ""}`}>
                     <span className="calibration-point-label">{SLOT_LABELS[slot]}</span>
                     <div className="calibration-point-inputs">
                       <label className="calibration-point-input-group">
@@ -658,6 +1044,10 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
                           value={pointDrafts[slot].x}
                           placeholder="x"
                           onChange={(event) => updatePointDraft(slot, "x", event.target.value)}
+                          onFocus={() => {
+                            setActiveSlot(slot);
+                            setSelectedSlot(slot);
+                          }}
                           onBlur={() => commitPointAxis(slot, "x")}
                           onKeyDown={(event) => {
                             if (event.key === "Enter") {
@@ -674,6 +1064,10 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
                           value={pointDrafts[slot].y}
                           placeholder="y"
                           onChange={(event) => updatePointDraft(slot, "y", event.target.value)}
+                          onFocus={() => {
+                            setActiveSlot(slot);
+                            setSelectedSlot(slot);
+                          }}
                           onBlur={() => commitPointAxis(slot, "y")}
                           onKeyDown={(event) => {
                             if (event.key === "Enter") {
