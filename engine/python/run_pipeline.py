@@ -85,10 +85,10 @@ def draw_speed_gate_overlay(frame, line_a, line_b, disclaimer_text):
     cv2.line(frame, b1, b2, (0, 165, 255), 3)
 
     # We label line A for audience clarity.
-    cv2.putText(frame, "Linia A", (a1[0] + 10, a1[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+    cv2.putText(frame, "Linia A", (a1[0] + 10, a1[1] - 28), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
 
     # We label line B for audience clarity.
-    cv2.putText(frame, "Linia B", (b1[0] + 10, b1[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 165, 255), 2)
+    cv2.putText(frame, "Linia B", (b1[0] + 10, b1[1] - 28), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 165, 255), 2)
 
     # We draw entertainment disclaimer on every frame.
     cv2.putText(frame, disclaimer_text, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (20, 20, 255), 2)
@@ -105,6 +105,123 @@ def draw_roi(frame, roi_polygon):
 
     # We draw the ROI polygon border.
     cv2.polylines(frame, [pts], isClosed=True, color=(80, 255, 80), thickness=2)
+
+
+# This helper draws one readable text badge with a filled backplate.
+def draw_text_badge(
+    frame,
+    text: str,
+    origin: tuple,
+    font_scale: float,
+    text_color: tuple,
+    fill_color: tuple,
+    border_color: tuple,
+    thickness: int = 2,
+):
+    # We pick the same OpenCV font everywhere for a consistent overlay style.
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    # We measure text first so the backplate can fit tightly around it.
+    (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
+
+    # We add a little padding so the badge breathes and stays readable on bright roads.
+    pad_x = 14
+    pad_top = 16
+    pad_bottom = 12
+
+    # We clamp the badge inside the frame to avoid clipping at image edges.
+    x = max(0, min(int(origin[0]), frame.shape[1] - (text_width + pad_x * 2 + 2)))
+    badge_height = text_height + baseline + pad_top + pad_bottom
+    y = max(badge_height + 2, min(int(origin[1]), frame.shape[0] - 2))
+
+    # We compute filled rectangle corners from measured text size and padding.
+    top_left = (x, y - badge_height)
+    bottom_right = (x + text_width + pad_x * 2, y)
+
+    # We draw a solid background first so the text survives any road texture behind it.
+    cv2.rectangle(frame, top_left, bottom_right, fill_color, thickness=-1)
+
+    # We add a thin border to make the badge feel crisp in motion.
+    cv2.rectangle(frame, top_left, bottom_right, border_color, thickness=2)
+
+    # We finally draw text inside the badge with comfortable inner padding.
+    text_origin = (x + pad_x, y - pad_bottom - baseline)
+    cv2.putText(frame, text, text_origin, font, font_scale, text_color, thickness, cv2.LINE_AA)
+
+    # We return bottom-left anchor of the next stacked badge.
+    return x, top_left[1] - 6
+
+
+# This helper draws a clearer stacked overlay for track id, speed, and current status.
+def draw_track_overlay_badges(
+    frame,
+    bbox,
+    track_id: int,
+    gate_info: Dict,
+    speed_limit_kmh: float = 50.0,
+    redline_over_limit_kmh: float = 11.0,
+):
+    # We unpack bbox once because badge placement is tied to the tracked vehicle box.
+    x1, y1, _, _ = [int(v) for v in bbox]
+
+    # We start just above the bounding box when there is room.
+    badge_x = x1
+    badge_y = max(56, y1 - 12)
+
+    # We always show the tracker id in a compact dark badge.
+    next_x, next_y = draw_text_badge(
+        frame=frame,
+        text=f"ID {track_id}",
+        origin=(badge_x, badge_y),
+        font_scale=0.92,
+        text_color=(255, 255, 255),
+        fill_color=(26, 28, 34),
+        border_color=(96, 214, 255),
+        thickness=2,
+    )
+
+    # We show a larger dedicated badge for final speed because that is the star metric.
+    speed_kmh = gate_info.get("speed_kmh")
+    if speed_kmh is not None:
+        exact_speed_kmh = float(speed_kmh)
+        speed_text = f"{exact_speed_kmh:.2f} km/h"
+
+        # We color-code speeds for a 50 km/h road: green legal, orange slightly over, red at 50 + 11.
+        warning_threshold_kmh = float(speed_limit_kmh) + float(redline_over_limit_kmh)
+        if exact_speed_kmh <= float(speed_limit_kmh):
+            speed_fill_color = (22, 122, 44)
+            speed_border_color = (120, 245, 142)
+        elif exact_speed_kmh >= warning_threshold_kmh:
+            speed_fill_color = (20, 32, 186)
+            speed_border_color = (110, 145, 255)
+        else:
+            speed_fill_color = (0, 140, 255)
+            speed_border_color = (110, 220, 255)
+
+        draw_text_badge(
+            frame=frame,
+            text=speed_text,
+            origin=(next_x, next_y),
+            font_scale=1.16,
+            text_color=(255, 255, 255),
+            fill_color=speed_fill_color,
+            border_color=speed_border_color,
+            thickness=3,
+        )
+        return
+
+    # Before speed is known, we still show status in a slightly smaller warm badge.
+    status_text = str(gate_info.get("status_label", "status necunoscut"))
+    draw_text_badge(
+        frame=frame,
+        text=status_text,
+        origin=(next_x, next_y),
+        font_scale=0.82,
+        text_color=(255, 255, 255),
+        fill_color=(90, 52, 16),
+        border_color=(255, 196, 110),
+        thickness=2,
+    )
 
 
 # This helper computes and aggregates track-level summary rows.
@@ -163,38 +280,72 @@ def transcode_overlay_for_web(raw_path: str, final_path: str) -> Dict[str, str]:
         os.replace(raw_path, final_path)
         return {"status": "fallback_raw", "message": "ffmpeg not found; raw MP4 kept as final output."}
 
-    # We build ffmpeg command for web-compatible MP4 encoding.
-    command = [
-        ffmpeg_bin,
-        "-y",
-        "-i",
-        raw_path,
-        "-an",
-        "-c:v",
-        "libx264",
-        "-pix_fmt",
-        "yuv420p",
-        "-movflags",
-        "+faststart",
-        final_path,
+    # We prepare preferred hardware encoder first because it is much faster on Macs.
+    command_variants = [
+        {
+            "status": "transcoded_videotoolbox",
+            "message": "Overlay transcoded with Apple VideoToolbox hardware acceleration.",
+            "command": [
+                ffmpeg_bin,
+                "-y",
+                "-i",
+                raw_path,
+                "-an",
+                "-c:v",
+                "h264_videotoolbox",
+                "-allow_sw",
+                "1",
+                "-pix_fmt",
+                "yuv420p",
+                "-movflags",
+                "+faststart",
+                final_path,
+            ],
+        },
+        {
+            "status": "transcoded",
+            "message": "Overlay transcoded to H.264 for browser playback.",
+            "command": [
+                ffmpeg_bin,
+                "-y",
+                "-i",
+                raw_path,
+                "-an",
+                "-c:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+                "-movflags",
+                "+faststart",
+                final_path,
+            ],
+        },
     ]
 
-    # We execute ffmpeg and capture output for debugging metadata.
-    result = subprocess.run(command, capture_output=True, text=True)
+    # We try hardware first and fall back to CPU if needed.
+    ffmpeg_errors = []
+    for variant in command_variants:
+        # We execute ffmpeg and capture output for debugging metadata.
+        result = subprocess.run(variant["command"], capture_output=True, text=True)
 
-    # We return success info and cleanup raw file when transcode succeeds.
-    if result.returncode == 0 and os.path.exists(final_path):
-        if os.path.exists(raw_path):
-            os.remove(raw_path)
-        return {"status": "transcoded", "message": "Overlay transcoded to H.264 for browser playback."}
+        # We return success info and cleanup raw file when transcode succeeds.
+        if result.returncode == 0 and os.path.exists(final_path):
+            if os.path.exists(raw_path):
+                os.remove(raw_path)
+            return {"status": variant["status"], "message": variant["message"]}
+
+        # We collect one short error snippet before trying the next encoder path.
+        ffmpeg_errors.append(result.stderr[:240])
+
+        # We remove partial output before another attempt.
+        if os.path.exists(final_path):
+            os.remove(final_path)
 
     # We fallback to raw file when ffmpeg command failed for any reason.
-    if os.path.exists(final_path):
-        os.remove(final_path)
     os.replace(raw_path, final_path)
     return {
         "status": "ffmpeg_failed_fallback_raw",
-        "message": f"ffmpeg failed; raw MP4 kept. Details: {result.stderr[:400]}",
+        "message": f"ffmpeg failed; raw MP4 kept. Details: {' | '.join(ffmpeg_errors)[:400]}",
     }
 
 
@@ -280,6 +431,10 @@ def main():
         args.show_roi_overlay_on_video,
         default=bool(cfg.get("show_roi_overlay_on_video", False)),
     )
+
+    # We keep legal-threshold styling configurable while defaulting to a common 50 km/h urban road.
+    speed_limit_kmh = float(cfg.get("speed_limit_kmh", 50.0))
+    redline_over_limit_kmh = float(cfg.get("redline_over_limit_kmh", 11.0))
 
     # We resolve the requested inference device once so the whole run is consistent.
     requested_device = str(cfg.get("device", "auto"))
@@ -431,11 +586,15 @@ def main():
                     lineType=cv2.LINE_AA,
                 )
 
-            # We build label text with track id and optional speed.
-            label = f"ID {track_id} | {gate_info.get('status_label', 'status necunoscut')}"
-
-            # We draw label above bounding box.
-            cv2.putText(frame, label, (x1, max(20, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            # We draw clearer stacked badges so ID and speed remain readable in motion.
+            draw_track_overlay_badges(
+                frame,
+                bbox,
+                track_id=track_id,
+                gate_info=gate_info,
+                speed_limit_kmh=speed_limit_kmh,
+                redline_over_limit_kmh=redline_over_limit_kmh,
+            )
 
             # We add event row for detailed timeline analysis.
             events.append(

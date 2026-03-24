@@ -285,6 +285,10 @@ function DashboardPage() {
           <span className="status-label">Progress:</span>
           <strong>{job?.progress ?? 0}%</strong>
         </div>
+        <div className="status-pill">
+          <span className="status-label">FPS:</span>
+          <strong>{job?.metadata?.fps ? job.metadata.fps.toFixed(3).replace(/\.?0+$/, "") : "-"}</strong>
+        </div>
       </section>
 
       {error ? <p className="error-banner">Eroare API: {error}</p> : null}

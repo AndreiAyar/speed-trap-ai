@@ -486,6 +486,7 @@ body {
   border-radius: 14px;
   overflow: hidden;
   background: #131313;
+  touch-action: none;
 }
 
 /* Video fills stage width while preserving native aspect ratio. */
@@ -521,6 +522,13 @@ body {
   fill: #fff;
   stroke: #16110f;
   stroke-width: 2;
+}
+
+/* Selected point gets stronger contrast and larger visual weight for precision edits. */
+.cal-point-active {
+  fill: #fffbdd;
+  stroke: #ff7b1f;
+  stroke-width: 3;
 }
 
 /* ROI polygon uses translucent green fill so the road zone stays visible. */
@@ -675,6 +683,27 @@ body {
   font-size: 0.86rem;
 }
 
+/* Selected-point summary keeps fine adjustments compact and easy to scan. */
+.calibration-selected-point-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #5f4a3d;
+}
+
+/* Nudge grid gives quick pixel-level directional adjustments. */
+.calibration-nudge-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/* Nudge buttons are compact because they are used repeatedly during calibration. */
+.calibration-nudge-btn {
+  padding: 9px 10px;
+}
+
 /* Action row aligns copy/clear buttons. */
 .calibration-actions {
   display: flex;
@@ -717,6 +746,14 @@ body {
   color: #285f36;
   font-size: 0.83rem;
   font-weight: 700;
+}
+
+/* Small usage hint explains the new direct-manipulation interactions. */
+.calibration-editor-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #6b584b;
 }
 
 /* Panel title style for section hierarchy. */

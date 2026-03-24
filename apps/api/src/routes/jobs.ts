@@ -95,6 +95,22 @@ function resolveSafeVideoPath(inputPath: string): string | null {
   return resolvedPath;
 }
 
+// This helper reads engine metadata JSON when the job already produced it.
+function loadJobMetadata(metadataPath: string | undefined): Record<string, unknown> | undefined {
+  // We skip when metadata artifact is missing or path is blank.
+  if (!metadataPath || !fs.existsSync(metadataPath)) {
+    return undefined;
+  }
+
+  try {
+    // We parse the metadata file into a plain object for API consumers.
+    return JSON.parse(fs.readFileSync(metadataPath, "utf-8")) as Record<string, unknown>;
+  } catch {
+    // We ignore malformed metadata so status endpoint remains robust.
+    return undefined;
+  }
+}
+
 // Route: create new processing job.
 jobsRouter.post("/jobs", (req, res) => {
   // We parse request body into typed object.
@@ -201,8 +217,18 @@ jobsRouter.get("/jobs/:jobId", (req, res) => {
     return res.status(404).json({ error: "Job not found." });
   }
 
+  // We enrich the response with engine metadata when it already exists on disk.
+  const metadata = loadJobMetadata(job.artifacts.metadataJson);
+
   // We return typed job payload.
-  return res.json(job);
+  return res.json({
+    ...job,
+    metadata: metadata
+      ? {
+          fps: typeof metadata.fps === "number" ? metadata.fps : undefined,
+        }
+      : undefined,
+  });
 });
 
 // Route: list vehicle tracks for leaderboard.

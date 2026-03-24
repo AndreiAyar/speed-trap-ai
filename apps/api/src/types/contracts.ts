@@ -47,6 +47,11 @@ export interface JobRecord {
   createdAt: string;
   // Timestamp when job finished or failed.
   finishedAt?: string;
+  // Optional engine metadata loaded from metadata.json after processing completes.
+  metadata?: {
+    // FPS value used by the engine for timestamp-to-time conversion.
+    fps?: number;
+  };
 }
 
 // Vehicle row structure sent to leaderboard UI.
