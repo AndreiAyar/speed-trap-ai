@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "build:radar": "tsc --noEmit && vite build --config vite.radar.config.ts && mv dist-radar/radar.html dist-radar/index.html && printf '/radar /index.html 200\\n/* /index.html 200\\n' > dist-radar/_redirects",
+    "build:radar": "tsc --noEmit && vite build --config vite.radar.config.ts && node ../../scripts/finalize-radar-build.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -14,10 +14,10 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
-    "@vitejs/plugin-react": "^4.4.1",
-    "typescript": "^5.8.2",
-    "vite": "^5.4.14"
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.8"
   }
 }

@@ -2,6 +2,16 @@
   "name": "speed-trap-ai",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=22.13.0",
+    "pnpm": ">=10"
+  },
+  "pnpm": {
+    "overrides": {
+      "proxy-addr@<2.0.8": "^2.0.8"
+    }
+  },
   "description": "Entertainment-first AI speed trap demo with two-line gate speed estimation.",
   "scripts": {
     "dev:api": "pnpm --filter @speed-trap/api dev",

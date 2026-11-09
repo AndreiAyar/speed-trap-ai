@@ -1,225 +1,56 @@
-# Camera configuration for one scene/location.
-# IMPORTANT: Update these values for your real filming angle.
-scene_id: "timisoara-default"
+# Example resolution: 3840x2160. Copy calibration YAML from the dashboard.
 
-# Default model is YOLO26 nano. We keep fallback to YOLO11 nano if model is unavailable.
-model_primary: "yolo26n.pt"
-model_fallback: "yolo11n.pt"
+# Camera-specific example. Recalibrate for your own scene and original video resolution.
+scene_id: example-road-4k
 
-# Tracker config uses ByteTrack for stable ID association.
-tracker: "bytetrack.yaml"
+# Weights download on first run. Internet is required once.
+model_primary: yolo26n.pt
+model_fallback: yolo11n.pt
 
-# Inference device preference:
-# - auto: chooses Apple GPU (MPS) on Macs when available, otherwise CPU
-# - mps: forces Apple GPU on Apple Silicon if supported by Torch
-# - cpu: keeps everything on CPU for maximum compatibility
-device: "auto"
+# ByteTrack associates detections across frames; it does not calculate speed.
+tracker: bytetrack.yaml
 
-# Vehicle classes to include from COCO labels.
-# car=2, motorcycle=3, bus=5, truck=7 in common COCO mappings.
+# auto: Apple MPS, then CUDA if available, otherwise CPU. cpu forces CPU.
+device: auto
+
+# COCO classes: car, motorcycle, bus, truck.
 classes: [2, 3, 5, 7]
-
-# Detection confidence threshold.
 conf_threshold: 0.25
 
-# Anchor point for gate crossing:
-# - bottom_center is recommended for better road-contact timing.
-# - center is available for debugging/comparison.
-anchor_point: "bottom_center"
+# The red dot at the bottom-center of each box controls crossing time.
+anchor_point: bottom_center
 
-# Two-line speed gate in frame coordinates (pixels).
-
-#giroc-> padure line + roy -> 20.2 meters
-# line_a:
-#   - [500, 556]
-#   - [1024, 556]
-
-# line_b:
-#   - [500, 610]
-#   - [1024, 610]
-
-# roi_polygon:
-#   - [500, 500]
-#   - [900, 540]
-#   - [1919, 900]
-#   - [100, 1079]
-
-#giroc -> padure -> alta linie mai calibrata mai buna pe asta mergem 100%
-# line_a:
-#   - [564, 595]
-#   - [940, 555]
-
-# line_b:
-#   - [636, 690]
-#   - [1166, 636]
-
-# roi_polygon:
-#   - [511, 457]
-#   - [1918, 847]
-#   - [1916, 1071]
-#   - [61, 1079]
-
-#giroc 1.5 video nume -> padure -> alta linie mai calibrata mai buna pe asta mergem 100%
-# line_a:
-#   - [1155, 1194]
-#   - [1860, 1100]
-
-# line_b:
-#   - [1240, 1398]
-#   - [2275, 1264]
-
-# roi_polygon:
-#   - [1068, 764]
-#   - [3835, 1655]
-#   - [3839, 2158]
-#   - [593, 2159]
-
-
-#lidl-> eso giroc line + roy -> 20.2 meters
-#v1 line
-# line_a:
-#   - [400, 670]
-#   - [670, 639]
-
-# line_b:
-#   - [590, 728]
-#   - [900, 687]
-
-#v2 line
-# line_a:
-#   - [401, 673]
-#   - [671, 644]
-
-# line_b:
-#   - [590, 723]
-#   - [900, 684]
-
-# roi_polygon:
-#   - [50, 570]
-#   - [140, 560]
-#   - [1919, 800]
-#   - [1730, 1079]
-
-#v3 -> proving the point video video 3 
-# line_a:
-#   - [1215, 1338]
-#   - [1717, 1294]
-
-# line_b:
-#   - [1700, 1459]
-#   - [2279, 1368]
-
-# roi_polygon:
-#   - [536, 1092]
-#   - [3839, 1570]
-#   - [3839, 2099]
-#   - [3, 2159]
-
-#v4 -> another point on video 3
+# Gate A starts timing; gate B stops it. Coordinates are native video pixels.
 line_a:
   - [1382, 1348]
   - [1580, 1275]
-
 line_b:
   - [1893, 1455]
   - [2137, 1365]
 
+# Filters speed events; [] allows the full frame. YOLO still detects the full frame.
 roi_polygon:
   - [536, 1092]
   - [3839, 1570]
   - [3839, 2099]
   - [3, 2159]
 
-#mc spre eso line cu roi -> 16.9M
-# line_a:
-#   - [945, 1100]
-#   - [1900, 1077]
+# Replace this example with MEASURED road distance. Pixels are not meters.
+distance_meters: 20.2
 
-# line_b:
-#   - [590, 1210]
-#   - [1900, 1203]
-
-# roi_polygon:
-#   - [0, 2159]
-#   - [0, 1200]
-#   - [1919, 800]
-#   - [1930, 2159]
-
-#v2
-# line_a:
-#   - [858, 1098]
-#   - [1875, 1089]
-
-# line_b:
-#   - [503, 1215]
-#   - [1813, 1208]
-
-# roi_polygon:
-#   - [0, 2159]
-#   - [0, 1200]
-#   - [1919, 800]
-#   - [1930, 2159]
-
-#v3 same video t_1_om sens opus
-# line_a:
-#   - [1977, 1218]
-#   - [3045, 1209]
-
-# line_b:
-#   - [1888, 1106]
-#   - [2672, 1100]
-
-# roi_polygon:
-#   - [1909, 2159]
-#   - [1905, 959]
-#   - [3828, 800]
-#   - [3839, 2159]
-
-
-# line_a:
-#   - [0, 549]
-#   - [1919, 549]
-
-# line_b:
-#   - [0, 600]
-#   - [1919, 600]
-
-# Real-world distance (meters) between line A and line B.
-# You should measure this once per scene.
-distance_meters: 20.2 #16.9 #21 #16.9
-# ROI (Region of Interest) - Defines a polygonal area within the video frame where analysis should be performed.
-# Only objects and events detected within this polygon will be processed by the detection engine.
-# Leave empty to analyze the entire video frame without spatial restrictions.
-# Expected format: List of [x, y] coordinates defining the polygon vertices in pixel coordinates.
-# Example: [[0, 0], [640, 0], [640, 480], [0, 480]]
-
-# Optional ROI polygon to restrict analysis area.
-# If empty, full frame is used.
-# roi_polygon:
-  # ROI tuned for monitored carriageway (vehicles approaching camera) in 3840x2160 frame.
-  # - [1320, 620]
-  # - [2620, 620]
-  # - [2240, 2150]
-  # - [60, 2150]
-
-# Direction vector for expected vehicle movement (x, y).
-# Example below means mostly downward movement in frame.
+# Expected image-space motion [x, y]; positive y points down.
 direction: [0.0, 1.0]
 
-# Blur vehicles by default for safer publishing.
+# Blurs detected vehicles. This is not guaranteed plate anonymization.
 privacy_blur: true
 
-# Draw short trail behind each tracked vehicle for visual debugging and storytelling.
+# Short motion trails help visualize tracking.
 trail_enabled: true
-
-# Number of recent points kept in trail polyline per track.
 trail_length_frames: 22
-
-# Trail line thickness in pixels.
 trail_thickness: 2
 
-# Minimum milliseconds between crossing checks for same track to reduce jitter noise.
+# Suppress repeated crossing events caused by position jitter (milliseconds).
 min_crossing_delta_ms: 150
 
-# Overlay text disclaimer shown on output video.
-disclaimer_text: "Doar pentru divertisment. Nu este masurare legala."
+# The engine always draws this required notice.
+disclaimer_text: Doar pentru divertisment. Nu este masurare legala.

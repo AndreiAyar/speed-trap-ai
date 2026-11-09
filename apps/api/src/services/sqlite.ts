@@ -23,7 +23,8 @@ const currentDir = path.dirname(currentFilePath);
 const workspaceRoot = path.resolve(currentDir, "../../../../");
 
 // We compute path for local SQLite DB file.
-const dbPath = path.join(workspaceRoot, "data", "speed-trap.sqlite");
+// A separate database is useful for a clean demo without touching job history.
+const dbPath = path.resolve(workspaceRoot, process.env.SPEED_TRAP_DB_PATH ?? "data/speed-trap.sqlite");
 
 // We ensure data folder exists before opening database.
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });

@@ -78,7 +78,7 @@ export function JobUpload({ onJobCreated }: JobUploadProps) {
           className="field-input"
           value={sourcePath}
           onChange={(e) => setSourcePath(e.target.value)}
-          placeholder="/absolute/path/to/video.mp4"
+          placeholder="data/input/sample.mp4"
           required
         />
 
@@ -108,7 +108,7 @@ export function JobUpload({ onJobCreated }: JobUploadProps) {
       {error ? <p className="error-text">Eroare: {error}</p> : null}
 
       <p className="disclaimer-text">
-        Estimare AI pentru divertisment. Nu este masurare legala.
+        Doar pentru divertisment. Nu este masurare legala.
       </p>
     </section>
   );

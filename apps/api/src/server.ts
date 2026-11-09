@@ -42,7 +42,7 @@ app.get("/health", (_req, res) => {
   res.json({
     service: "speed-trap-api",
     status: "ok",
-    disclaimer: "Entertainment-only estimated speed output.",
+    disclaimer: "Doar pentru divertisment. Nu este masurare legala.",
   });
 });
 
@@ -50,7 +50,9 @@ app.get("/health", (_req, res) => {
 const port = Number(process.env.PORT ?? 8787);
 
 // We start listening for incoming requests.
-app.listen(port, () => {
+// This is a local file-processing tool; expose it only on loopback by default.
+const host = process.env.HOST ?? "127.0.0.1";
+app.listen(port, host, () => {
   // We log startup info for local debugging.
   console.log(`[api] listening on http://localhost:${port}`);
 });

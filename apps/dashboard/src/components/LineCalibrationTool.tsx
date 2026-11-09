@@ -778,13 +778,14 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
       <p className="panel-subtitle">
         Paste a local video path or URL, click on frame to set endpoints, and copy YAML coordinates for `line_a` and `line_b`.
       </p>
+      <p className="disclaimer-text">Doar pentru divertisment. Nu este masurare legala.</p>
 
       <div className="calibration-url-row">
         <input
           className="field-input"
           value={inputUrl}
           onChange={(event) => setInputUrl(event.target.value)}
-          placeholder="data/input/3.mp4"
+          placeholder="data/input/sample.mp4"
         />
         <button
           type="button"

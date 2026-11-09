@@ -42,7 +42,10 @@ def side_of_line(point: Tuple[float, float], line: List[List[float]]) -> float:
     p = np.array(point, dtype=float)
 
     # 2D cross-product scalar tells which side of line the point is on.
-    return float(np.cross(p2 - p1, p - p1))
+    # Spell out the 2D determinant: NumPy 2+ deprecates np.cross for 2D vectors.
+    line_delta = p2 - p1
+    point_delta = p - p1
+    return float(line_delta[0] * point_delta[1] - line_delta[1] * point_delta[0])
 
 
 # This helper checks whether the point is inside ROI polygon when ROI exists.
