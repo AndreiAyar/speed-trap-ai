@@ -4,14 +4,18 @@ The GIFs are excerpts from the author's film, [Radarul s-a SCHIMBAT](https://www
 
 | File | Film interval | What it shows |
 | --- | --- | --- |
+| `road-measurement.gif` | 02:37.2–02:40.3; 02:54.8–02:57.6; 02:58.4–03:01.7 | Actual roadside phone measurement, tape-measure comparison, and overhead road marking dimensions |
 | `calibration.gif` | 05:21.5–05:28.1 | Moving line endpoints and the green ROI in the application |
 | `bytetrack.gif` | 04:03.2–04:09.1 | The pointing hand following a tracked vehicle |
 | `speed-gate.gif` | 04:21.5–04:28.5 | The same ID crossing A, then B, and receiving a speed |
 | `comparison.gif` | 06:20.5–06:26.5 | AI overlay alongside vehicle sensor data, speedometer, and Waze |
 | `video-preview.jpg` | 06:24 | Linked preview for the complete YouTube film |
+| `video-link-preview.png` | Film preview with a Play control | Clickable YouTube preview with an English caption |
 | `dashboard.png` | Local app capture | Completed job, overlay, leaderboard, and track details |
 | `dashboard-calibration.png` | Local app capture | The current calibration tool using the supplied recording |
 | `dashboard-walkthrough.gif` | Local app capture | Actual clicks, preview playback, scrolling, and placing line endpoints |
+| `readme-banner.png` | Film frames at 04:38.2 and 04:27.2 | Uppercase Roboto Black on graphite/ochre, with separate green and red speed estimates from the film |
+| `readme-banner.svg` | Source artwork for the header | Self-contained photo layout and outlined Roboto lettering; no font files or external resources required |
 
 Recreate the film excerpts locally with:
 

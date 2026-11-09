@@ -12,6 +12,9 @@ dist-radar/
 # Documentation source footage/contact sheets stay private and local.
 .local-media/
 
+# Internal release checklist stays local.
+/docs/github-preparation.md
+
 # Model weights are downloaded by Ultralytics on the first run.
 *.pt
 *.onnx

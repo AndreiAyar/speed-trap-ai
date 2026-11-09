@@ -1,8 +1,8 @@
 # Speed Trap AI
 
-**Two lines. A known distance. Vehicle speed from video.**
+![Speed Trap AI — vehicle speed from video](docs/assets/readme-banner.png)
 
-A traffic experiment built with **YOLO26 + ByteTrack**, a Python video engine, and a React dashboard. Detect a vehicle, keep its ID across frames, and time its journey between two virtual lines drawn on the road.
+I built this for a video filmed in Timișoara. It uses **YOLO26 and ByteTrack** to follow cars and estimate their speed from the time they take to travel between two lines. The dashboard lets you place the lines and review the processed recording.
 
 > **Doar pentru divertisment. Nu este masurare legala.**
 >
@@ -14,7 +14,7 @@ A traffic experiment built with **YOLO26 + ByteTrack**, a Python video engine, a
 
 ![Dragging the two speed gates and adjusting the green road polygon](docs/assets/calibration.gif)
 
-Pause the recording and place **Linia A** and **Linia B** across the carriageway. Drag endpoints to refine them, then outline the road with the green **region of interest (ROI)**. Enter the real distance traveled between the lines in meters; the image alone cannot tell you that distance.
+Pause the recording and place **Linia A (line A)** and **Linia B (line B)** across the carriageway. Drag endpoints to refine them, then outline the road with the green **region of interest (ROI)**. Enter the real distance traveled between the lines in meters; the image alone cannot tell you that distance.
 
 The GIF comes from the original film. The current dashboard lets you click endpoints, move whole lines or the ROI, fine-tune coordinates, and copy or paste calibration YAML.
 
@@ -31,8 +31,8 @@ The GIF comes from the original film. The current dashboard lets you click endpo
 The red dot is the vehicle's **bottom-center anchor**. Crossing A starts the timer; crossing B stops it. Only the same tracked ID crossing both gates in the configured direction produces a final speed.
 
 ```text
-Vehicle crosses Linia A at t1
-Vehicle crosses Linia B at t2
+Vehicle crosses Linia A (line A) at t1
+Vehicle crosses Linia B (line B) at t2
 
 speed_kmh = distance_meters / (t2 - t1) * 3.6
 ```
@@ -48,6 +48,34 @@ This is one average estimate over the gate distance. The dashboard's “max” a
 The final experiment in the film puts the AI result beside **vehicle sensor data, the speedometer, and Waze/GPS**. The overlay shows **50.39 km/h** while the other displayed readings are around 50 km/h.
 
 This is an illustrative comparison from that recording, not a measured error bound or a validation study. Camera movement, distance calibration, FPS, reflections, occlusion, and tracker ID changes can all affect the result.
+
+## Cool tricks from the video
+
+### Measure the road with a phone
+
+I used the iPhone's **Measure** app to estimate the length of a painted road dash and the gap between dashes. I also compared the app with a tape measure on a smaller object, which you can see in the film.
+
+![Measuring a real road marking with iPhone Measure, checking against a tape measure, then showing the road dimensions from above](docs/assets/road-measurement.gif)
+
+On that stretch of road, I got roughly **2.8 m for a white dash** and **5.9 m for the gap**. Those are measurements from that location, not standard sizes to assume on every road. Measure gives an estimate, so any error in that distance carries through to the speed calculation.
+
+### Use the markings as a ruler
+
+Once I knew those two lengths, I could count the markings between the virtual gates. For a span covering three complete dashes and the two gaps between them:
+
+```text
+3 × 2.8 m + 2 × 5.9 m = 20.2 m
+```
+
+That explains where a distance such as **20.2 m** can come from. Place line A and line B at the ends of the span you counted. If a gate falls partway through a dash or gap, include only that part. The distance is measured along the road, not across the image in pixels.
+
+### Keep the camera in the same place
+
+I used a tripod to keep the shot steady. The gates are attached to image coordinates, so moving or zooming the camera after calibration changes where they sit on the road. Set up the shot first, then draw the gates.
+
+### Check the red dot when a result looks wrong
+
+The red dot shows the exact anchor used for timing. In the film, one unusually high result comes with a visible jump in that point. Following the dot frame by frame is a useful way to investigate a surprising number before trusting it.
 
 ## The dashboard
 
@@ -220,8 +248,8 @@ This project uses [Ultralytics YOLO](https://github.com/ultralytics/ultralytics)
 
 ## Watch the full experiment
 
-[![Watch Radarul s-a SCHIMBAT on YouTube](docs/assets/video-preview.jpg)](https://www.youtube.com/watch?v=CDCUi20Q6CM)
+[![Play the complete experiment on YouTube — English subtitles available](docs/assets/video-link-preview.png)](https://www.youtube.com/watch?v=CDCUi20Q6CM)
 
-**[Radarul s-a SCHIMBAT — watch on YouTube](https://www.youtube.com/watch?v=CDCUi20Q6CM)**
+[Watch the full experiment on YouTube](https://www.youtube.com/watch?v=CDCUi20Q6CM)
 
 Romanian audio. **English subtitles available** — enable captions in the YouTube player.
