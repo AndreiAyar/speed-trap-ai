@@ -12,7 +12,7 @@ Working checklist for the public release. Source recordings and analysis sheets 
 - [x] Write an English README with GIF explanations, setup, limitations, and linked video (English subtitles).
 - [x] Run build, engine, API, and public-file checks.
 - [ ] Confirm the owner's code licensing choice (AGPL-3.0 proposed; media separate).
-- [ ] Publish to the existing GitHub repository when authentication is available.
+- [x] Publish the verified changes to the existing GitHub repository (`codex/github-ready`).
 
 The source film illustrates a broader live workflow. Describe this repository's recorded-file processing accurately. Comparison footage is an illustrative experiment, not an accuracy certification. Keep the required Romanian disclaimer visible.
 
