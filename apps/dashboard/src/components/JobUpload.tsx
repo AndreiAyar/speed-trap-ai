@@ -15,7 +15,7 @@ interface JobUploadProps {
 // We export upload component used on main page.
 export function JobUpload({ onJobCreated }: JobUploadProps) {
   // We keep source path input as local state.
-  const [sourcePath, setSourcePath] = useState("/Users/ayar/Personal Dev/speed-trap-ai/data/input/sample.mp4");
+  const [sourcePath, setSourcePath] = useState("data/input/sample.mp4");
 
   // We let users hide visual overlays for cars outside ROI while keeping blur.
   const [hideOutsideRoiOverlays, setHideOutsideRoiOverlays] = useState(true);
@@ -78,7 +78,7 @@ export function JobUpload({ onJobCreated }: JobUploadProps) {
           className="field-input"
           value={sourcePath}
           onChange={(e) => setSourcePath(e.target.value)}
-          placeholder="/absolute/path/to/video.mp4"
+          placeholder="data/input/sample.mp4"
           required
         />
 
@@ -108,7 +108,7 @@ export function JobUpload({ onJobCreated }: JobUploadProps) {
       {error ? <p className="error-text">Eroare: {error}</p> : null}
 
       <p className="disclaimer-text">
-        Estimare AI pentru divertisment. Nu este masurare legala.
+        Doar pentru divertisment. Nu este masurare legala.
       </p>
     </section>
   );

@@ -69,7 +69,7 @@ const ROI_SLOT_ORDER: SlotKey[] = ["r1", "r2", "r3", "r4"];
 const SLOT_ORDER: SlotKey[] = [...LINE_SLOT_ORDER, ...ROI_SLOT_ORDER];
 
 // We use a practical local sample path when no suggested URL exists yet.
-const DEFAULT_CALIBRATION_PATH = "/Users/ayar/Personal Dev/speed-trap-ai/data/input/sample.mp4";
+const DEFAULT_CALIBRATION_PATH = "data/input/sample.mp4";
 
 // This helper formats one native point into YAML list item text.
 function formatYamlPoint(point: Point): string {
@@ -778,13 +778,14 @@ export function LineCalibrationTool({ suggestedUrl = "" }: LineCalibrationToolPr
       <p className="panel-subtitle">
         Paste a local video path or URL, click on frame to set endpoints, and copy YAML coordinates for `line_a` and `line_b`.
       </p>
+      <p className="disclaimer-text">Doar pentru divertisment. Nu este masurare legala.</p>
 
       <div className="calibration-url-row">
         <input
           className="field-input"
           value={inputUrl}
           onChange={(event) => setInputUrl(event.target.value)}
-          placeholder="/Users/ayar/Personal Dev/speed-trap-ai/data/input/3.mp4"
+          placeholder="data/input/sample.mp4"
         />
         <button
           type="button"

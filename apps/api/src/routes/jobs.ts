@@ -71,11 +71,22 @@ function resolveSafeVideoPath(inputPath: string): string | null {
   }
 
   // We resolve relative paths from workspace root and keep absolute paths unchanged.
-  const resolvedPath = path.isAbsolute(trimmedPath) ? trimmedPath : path.resolve(workspaceRoot, trimmedPath);
+  const candidatePath = path.resolve(workspaceRoot, trimmedPath);
+
+  // Resolve symlinks too, so a link inside the project cannot expose outside files.
+  let resolvedPath: string;
+  try {
+    resolvedPath = fs.realpathSync(candidatePath);
+    if (!fs.statSync(resolvedPath).isFile()) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
 
   // We only allow files inside workspace root for safety.
   const relativeToRoot = path.relative(workspaceRoot, resolvedPath);
-  if (relativeToRoot.startsWith("..") || path.isAbsolute(relativeToRoot)) {
+  if (relativeToRoot === ".." || relativeToRoot.startsWith(`..${path.sep}`) || path.isAbsolute(relativeToRoot)) {
     return null;
   }
 
@@ -114,7 +125,7 @@ function loadJobMetadata(metadataPath: string | undefined): Record<string, unkno
 // Route: create new processing job.
 jobsRouter.post("/jobs", (req, res) => {
   // We parse request body into typed object.
-  const body = req.body as CreateJobRequest;
+  const body = (req.body ?? {}) as Partial<CreateJobRequest>;
 
   // We enforce file source type for MVP.
   if (body.sourceType !== "file") {
@@ -122,12 +133,18 @@ jobsRouter.post("/jobs", (req, res) => {
   }
 
   // We ensure source path is present.
-  if (!body.sourcePath) {
-    return res.status(400).json({ error: "sourcePath is required." });
+  if (typeof body.sourcePath !== "string") {
+    return res.status(400).json({ error: "sourcePath must be a video path inside this repository." });
+  }
+
+  // Use the same file validation for preview and processing, before creating a job.
+  const sourcePath = resolveSafeVideoPath(body.sourcePath);
+  if (!sourcePath) {
+    return res.status(400).json({ error: "Video not found. Copy it into data/input/ and use its repository-relative path." });
   }
 
   // We create and queue async job.
-  const job = createAndRunJob(body);
+  const job = createAndRunJob({ ...body, sourceType: "file", sourcePath });
 
   // We return accepted response immediately.
   return res.status(202).json({ jobId: job.id, status: job.status });

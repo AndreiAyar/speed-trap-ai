@@ -14,8 +14,14 @@ INPUT_PATH="${1:-}"
 
 # We enforce required input argument.
 if [[ -z "$INPUT_PATH" ]]; then
-  echo "Usage: ./scripts/run-offline.sh /absolute/or/relative/path/to/video.mp4"
+  echo "Usage: ./scripts/run-offline.sh path/to/video.mp4 [path/to/camera.yaml]"
   exit 1
+fi
+
+# An optional second argument selects a scene without overwriting the default.
+CONFIG_PATH="${2:-engine/python/configs/camera.default.yaml}"
+if [[ "$CONFIG_PATH" != /* ]]; then
+  CONFIG_PATH="$WORKSPACE_ROOT/$CONFIG_PATH"
 fi
 
 # We normalize input path to absolute path.
@@ -42,9 +48,10 @@ else
 fi
 
 # We run engine pipeline with default camera config.
+cd "$WORKSPACE_ROOT/engine/python"
 "$PYTHON_BIN" "$WORKSPACE_ROOT/engine/python/run_pipeline.py" \
   --input "$INPUT_ABS" \
-  --config "$WORKSPACE_ROOT/engine/python/configs/camera.default.yaml" \
+  --config "$CONFIG_PATH" \
   --out "$OUT_DIR"
 
 # We print final output location for quick access.

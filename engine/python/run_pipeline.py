@@ -481,9 +481,6 @@ def main():
                 (frame.shape[1], frame.shape[0]),
             )
 
-        # We draw gate lines and disclaimer first so they stay visible.
-        draw_speed_gate_overlay(frame, cfg["line_a"], cfg["line_b"], cfg.get("disclaimer_text", "Estimare AI"))
-
         # We draw ROI boundary if configured.
         if show_roi_overlay_on_video:
             draw_roi(frame, cfg.get("roi_polygon", []))
@@ -615,12 +612,21 @@ def main():
                 }
             )
 
+        # Draw the gate and required disclaimer last, so privacy blur and vehicle
+        # badges cannot accidentally cover the entertainment notice.
+        draw_speed_gate_overlay(
+            frame, cfg["line_a"], cfg["line_b"],
+            "Doar pentru divertisment. Nu este masurare legala.",
+        )
+
         # We write processed frame into overlay video.
         writer.write(frame)
 
     # We release writer resource if it was initialized.
     if writer is not None:
         writer.release()
+    else:
+        raise RuntimeError("No video frames decoded. Check the input file and its codec.")
 
     # We convert raw overlay to browser-friendly H.264 final output.
     transcode_info = transcode_overlay_for_web(raw_overlay_path, artifact_paths["overlay_video"])
