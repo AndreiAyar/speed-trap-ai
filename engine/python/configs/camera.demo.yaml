@@ -1,0 +1,56 @@
+# Demo at 1920x1080/60fps. Distance is UNMEASURED; numbers are illustrative.
+
+# Camera-specific example. Recalibrate for your own scene and original video resolution.
+scene_id: demo-1080p
+
+# Weights download on first run. Internet is required once.
+model_primary: yolo26n.pt
+model_fallback: yolo11n.pt
+
+# ByteTrack associates detections across frames; it does not calculate speed.
+tracker: bytetrack.yaml
+
+# auto: Apple MPS, then CUDA if available, otherwise CPU. cpu forces CPU.
+device: auto
+
+# COCO classes: car, motorcycle, bus, truck.
+classes: [2, 3, 5, 7]
+conf_threshold: 0.25
+
+# The red dot at the bottom-center of each box controls crossing time.
+anchor_point: bottom_center
+
+# Gate A starts timing; gate B stops it. Coordinates are native video pixels.
+line_a:
+  - [820, 635]
+  - [800, 740]
+line_b:
+  - [970, 660]
+  - [950, 790]
+
+# Filters speed events; [] allows the full frame. YOLO still detects the full frame.
+roi_polygon:
+  - [268, 546]
+  - [1920, 785]
+  - [1920, 1050]
+  - [2, 1080]
+
+# Replace this example with MEASURED road distance. Pixels are not meters.
+distance_meters: 20.2
+
+# Expected image-space motion [x, y]; positive y points down.
+direction: [1.0, 0.18]
+
+# Blurs detected vehicles. This is not guaranteed plate anonymization.
+privacy_blur: true
+
+# Short motion trails help visualize tracking.
+trail_enabled: true
+trail_length_frames: 22
+trail_thickness: 2
+
+# Suppress repeated crossing events caused by position jitter (milliseconds).
+min_crossing_delta_ms: 150
+
+# The engine always draws this required notice.
+disclaimer_text: Doar pentru divertisment. Nu este masurare legala.

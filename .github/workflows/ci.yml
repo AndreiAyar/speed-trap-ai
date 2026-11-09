@@ -1,0 +1,27 @@
+name: Build and speed-gate checks
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm build:radar
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      # Geometry tests need only NumPy; no GPU, weights, or video downloads.
+      - run: python -m pip install 'numpy>=1.26,<3'
+      - run: python -m unittest discover -s tests -v
+        working-directory: engine/python

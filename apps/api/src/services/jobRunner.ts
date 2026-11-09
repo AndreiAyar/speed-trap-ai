@@ -38,7 +38,10 @@ const defaultCameraConfig = path.join(workspaceRoot, "engine", "python", "config
 const outputRoot = path.join(workspaceRoot, "data", "output");
 
 // We compute project virtualenv Python path for reliable dependency resolution.
-const projectVenvPython = path.join(workspaceRoot, "engine", "python", ".venv", "bin", "python");
+const projectVenvPython = path.join(
+  workspaceRoot, "engine", "python", ".venv",
+  ...(process.platform === "win32" ? ["Scripts", "python.exe"] : ["bin", "python"]),
+);
 
 // This helper parses summary CSV into typed rows.
 function parseSummaryCsv(summaryCsvPath: string): VehicleTrack[] {
@@ -154,7 +157,10 @@ async function runJobInternal(jobId: string, request: CreateJobRequest, jobOutpu
   updateJob(runningJob);
 
   // We choose config file; currently we map all ids to default config.
-  const configPath = defaultCameraConfig;
+  // Relative overrides are resolved from the repository, so moving the clone works.
+  const configPath = process.env.SPEED_TRAP_CAMERA_CONFIG
+    ? path.resolve(workspaceRoot, process.env.SPEED_TRAP_CAMERA_CONFIG)
+    : defaultCameraConfig;
 
   // We construct Python CLI arguments.
   const args = [

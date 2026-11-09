@@ -1,220 +1,227 @@
 # Speed Trap AI
 
-Speed Trap AI is an entertainment demo that estimates vehicle speed from recorded road video.
+**Two lines. A known distance. Vehicle speed from video.**
 
-It detects vehicles, tracks them across frames, measures the time needed to travel between two virtual lines, renders an annotated overlay video, and shows results in a local dashboard.
+A traffic experiment built with **YOLO26 + ByteTrack**, a Python video engine, and a React dashboard. Detect a vehicle, keep its ID across frames, and time its journey between two virtual lines drawn on the road.
 
-> Doar pentru divertisment. Nu este masurare legala.
+> **Doar pentru divertisment. Nu este masurare legala.**
+>
+> For entertainment and education only. This is an estimated speed, not a certified measurement or legal evidence.
 
-This project is for demos, storytelling, and educational explainers. It is not a police radar, not a certified measuring tool, and not legal proof of speed.
+## See how it works
 
-## What It Does
+### 1. Draw the lines and choose the road area
 
-- Processes recorded video files offline
-- Detects vehicles with `yolo26n.pt`
-- Falls back to `yolo11n.pt` if needed
-- Tracks vehicles with `ByteTrack`
-- Uses a configurable two-line speed gate: `Linia A` -> `Linia B`
-- Restricts analysis to an optional `roi_polygon`
-- Blurs vehicles by default for safer sharing
-- Exports overlay video, CSV, JSONL, and metadata artifacts
-- Stores job history and leaderboard data in SQLite
-- Provides a React dashboard for upload, status, preview, and calibration
+![Dragging the two speed gates and adjusting the green road polygon](docs/assets/calibration.gif)
 
-## How Speed Is Estimated
+Pause the recording and place **Linia A** and **Linia B** across the carriageway. Drag endpoints to refine them, then outline the road with the green **region of interest (ROI)**. Enter the real distance traveled between the lines in meters; the image alone cannot tell you that distance.
 
-The core method stays intentionally simple and easy to explain:
+The GIF comes from the original film. The current dashboard lets you click endpoints, move whole lines or the ROI, fine-tune coordinates, and copy or paste calibration YAML.
 
-1. A vehicle crosses `Linia A` at `t1`
-2. The same tracked vehicle crosses `Linia B` at `t2`
-3. Speed is estimated with:
+### 2. Follow the same car with ByteTrack
+
+![The pointing hand follows a vehicle while its ByteTrack ID stays attached](docs/assets/bytetrack.gif)
+
+**YOLO detects the vehicles. ByteTrack associates their detections across frames.** The hand in the film makes that association visible: follow one car and its ID as it moves through the scene. The hand is an editorial annotation in the video; the engine renders boxes, IDs, trails, and a red anchor point.
+
+### 3. Start at A. Stop at B. Calculate the speed.
+
+![A tracked car crosses the first line, then receives a speed after crossing the second](docs/assets/speed-gate.gif)
+
+The red dot is the vehicle's **bottom-center anchor**. Crossing A starts the timer; crossing B stops it. Only the same tracked ID crossing both gates in the configured direction produces a final speed.
 
 ```text
+Vehicle crosses Linia A at t1
+Vehicle crosses Linia B at t2
+
 speed_kmh = distance_meters / (t2 - t1) * 3.6
 ```
 
-Important notes:
+For example, **20 meters in 1.5 seconds = 48 km/h**. Timing comes from the video frame index and its FPS, so analysis can run slower than playback without changing the formula.
 
-- `distance_meters` is the real-world distance between the two virtual lines
-- crossing time comes from the tracked vehicle anchor point
-- only valid A -> B crossings in the expected direction produce a final speed
-- results can be wrong if calibration, tracking, or camera stability are poor
+This is one average estimate over the gate distance. The dashboard's “max” and “average” columns summarize that cached gate result; they do not measure continuous instantaneous speed.
 
-## Why A Vehicle May Have No Final Speed
+### 4. Compare the result with the car
 
-A vehicle can appear in the video and still not receive a speed if:
+![The final filmed experiment compares AI speed, vehicle data, the speedometer, and Waze](docs/assets/comparison.gif)
 
-- it never crosses both lines in the valid order
-- it moves in the opposite configured direction
-- it stays outside the ROI
-- the tracker loses the object and assigns a new ID
-- the anchor point never truly crosses the line even if the box looks close
+The final experiment in the film puts the AI result beside **vehicle sensor data, the speedometer, and Waze/GPS**. The overlay shows **50.39 km/h** while the other displayed readings are around 50 km/h.
 
-## Architecture
+This is an illustrative comparison from that recording, not a measured error bound or a validation study. Camera movement, distance calibration, FPS, reflections, occlusion, and tracker ID changes can all affect the result.
 
-- `engine/python`
-  Python pipeline for detection, tracking, two-line speed gating, privacy blur, and overlay export
-- `apps/api`
-  Node/Express API that runs jobs and exposes history, job status, and leaderboard data
-- `apps/dashboard`
-  React dashboard for upload, preview, calibration, and result browsing
-- `docs`
-  Supporting Romanian docs and presentation notes
+## The dashboard
 
-## Defaults
+![The running dashboard after processing a real traffic clip](docs/assets/dashboard.png)
 
-- Primary model: `yolo26n.pt`
-- Fallback model: `yolo11n.pt`
-- Tracker: `ByteTrack`
-- Privacy blur: enabled by default
-- Anchor point: `bottom_center`
-- Device: `auto` (`MPS` on Apple Silicon when available, otherwise CPU)
+Start a job, inspect its annotated video, and click a leaderboard row to jump to that vehicle's crossing. Job history survives refresh through SQLite. Each job exports an **H.264 overlay, CSV summary, JSONL events, and JSON metadata**.
 
-Main scene config:
+This screenshot uses the supplied 1.93-second traffic clip and a real engine run. The demo configuration uses an **unmeasured example distance of 20.2 m**: the displayed speed illustrates the workflow, not the car's verified speed.
 
-- `engine/python/configs/camera.default.yaml`
+![Current calibration tool with the road polygon and both speed gates](docs/assets/dashboard-calibration.png)
 
-Important config fields:
+## Run it locally
 
-- `line_a`
-- `line_b`
-- `distance_meters`
-- `roi_polygon`
-- `direction`
-- `anchor_point`
-- `privacy_blur`
-- `trail_enabled`
-- `device`
+### Requirements
 
-## Prerequisites
+- **Node.js 22.13+** and **pnpm 10**; the repository pins pnpm 10.15.0.
+- **Python 3.11 or 3.12** recommended for PyTorch wheel compatibility.
+- **FFmpeg** on `PATH` for browser-playable H.264 output.
+- Internet for dependency installation and the first model download. A GPU is optional.
 
-- Node.js `22+`
-- `pnpm` `9+`
-- Python `3.11+`
-- `ffmpeg` available in `PATH`
+### Install
 
-## Setup
-
-### 1. Install JavaScript dependencies
+Clone or download this repository, open its folder, and run:
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
+python3.11 -m venv engine/python/.venv
+engine/python/.venv/bin/python -m pip install --upgrade pip
+engine/python/.venv/bin/python -m pip install -r engine/python/requirements.txt
 ```
 
-### 2. Create the Python environment
+Use `python3` instead of `python3.11` if it already selects a supported version. On Windows, create the environment with `py -3.11 -m venv engine/python/.venv` and use `engine/python/.venv/Scripts/python.exe` for pip commands. The API finds either environment automatically.
+
+Put your recording at **`data/input/sample.mp4`**. Source videos and YOLO weights stay local; they are intentionally absent from a fresh clone. Ultralytics downloads `yolo26n.pt` when first needed and the engine tries `yolo11n.pt` if loading the primary model fails.
+
+### Calibrate your scene
+
+1. Run `pnpm dev` and open the dashboard at [localhost:5173](http://localhost:5173).
+2. In **Line Calibration Tool**, load `data/input/sample.mp4` and pause on a useful frame.
+3. Click the two endpoints of A, then the two endpoints of B. Add four ROI vertices if needed.
+4. Drag shapes or edit coordinates, then choose **Copy YAML**.
+5. Paste `line_a`, `line_b`, and `roi_polygon` into [`camera.default.yaml`](engine/python/configs/camera.default.yaml). Set `distance_meters` to the measured road distance and `direction` to the intended movement.
+6. Start processing with the same repository-relative video path.
+
+**Copying YAML does not save it to the backend.** Save the configuration file yourself and create a new job after changes. The default coordinates are an example for a **3840 × 2160** scene; they must be replaced for another camera or resolution. Changing pixel resolution also changes the required coordinates.
+
+The default direction `[0, 1]` accepts downward motion; `[1, 0]` accepts rightward motion. Configure A before B along that path. To inspect the reverse flow, recalibrate the gates and direction and run another job.
+
+### Start the app
 
 ```bash
-cd engine/python
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+pnpm dev
 ```
 
-## Run The App
+- Dashboard: [http://localhost:5173](http://localhost:5173)
+- API health: [http://localhost:8787/health](http://localhost:8787/health)
 
-### Start API + dashboard
+The API resolves video paths relative to the repository and accepts existing video files inside it. Use `data/input/your-video.mp4`; no machine-specific absolute path is needed.
 
-From the project root:
+To select another scene on macOS/Linux:
 
 ```bash
-./scripts/run-api-dashboard.sh
+SPEED_TRAP_CAMERA_CONFIG=engine/python/configs/my-camera.yaml pnpm dev
 ```
 
-This starts:
+PowerShell equivalent: `$env:SPEED_TRAP_CAMERA_CONFIG="engine/python/configs/my-camera.yaml"`, then `pnpm dev`.
 
-- API on `http://localhost:8787`
-- dashboard dev server through Vite
-
-### Run one offline job from terminal
+### Process a file without the dashboard
 
 ```bash
 ./scripts/run-offline.sh data/input/sample.mp4
+# Optional second argument selects another camera configuration:
+./scripts/run-offline.sh data/input/sample.mp4 engine/python/configs/my-camera.yaml
 ```
 
-The script creates a timestamped job folder in `data/output/` and runs the Python pipeline with the default camera config.
+Or run Python directly, including on Windows:
 
-You can also create jobs from the dashboard UI.
+```bash
+# Run from the repository root. Use .venv/Scripts/python.exe on Windows.
+engine/python/.venv/bin/python engine/python/run_pipeline.py \
+  --input data/input/sample.mp4 \
+  --config engine/python/configs/camera.default.yaml \
+  --out data/output/manual-demo
+```
 
-## Typical Workflow
+Terminal-only runs write files without inserting a dashboard history entry. Dashboard jobs use the API, which also indexes their results in SQLite.
 
-1. Put a video in `data/input/`
-2. Start the API and dashboard
-3. Open the dashboard in your browser
-4. Run a job or select an older one
-5. Review the overlay, leaderboard, and per-vehicle details
-6. Use the calibration tool to adjust lines or ROI
-7. Re-run the job after calibration updates
+## Configuration and outputs
 
-## Dashboard Features
+| Setting | Meaning |
+| --- | --- |
+| `line_a`, `line_b` | Two `[x, y]` endpoints per gate, in original video pixels |
+| `distance_meters` | Measured distance along the vehicle's path between gates |
+| `direction` | Expected motion vector in image coordinates |
+| `roi_polygon` | Road polygon for accepted speed events; `[]` allows the full frame |
+| `anchor_point` | `bottom_center` by default; `center` available for experiments |
+| `privacy_blur` | `true` by default; blurs detected vehicle boxes |
+| `device` | `auto`, `cpu`, or `mps`; auto also selects CUDA when available |
+| `min_crossing_delta_ms` | Debounce interval for crossing events; default 150 ms |
 
-- Recent job history backed by SQLite
-- Processing status for each job
-- Overlay video preview
-- Valid-speed leaderboard
-- Per-vehicle detail panel
-- Calibration helper for line points and ROI polygon
-- YAML snippet generation for easy config updates
-
-## Output Files
-
-Each job writes artifacts to:
+ROI filters speed events and displayed tracks. YOLO still detects the full frame so vehicles outside the ROI can also be blurred.
 
 ```text
 data/output/<jobId>/
+├── overlay.mp4      # Annotated, silent video
+├── summary.csv      # Per-track crossing times and gate speed
+├── events.jsonl     # Frame-by-frame track events
+└── metadata.json    # FPS, model/device, configuration, output information
 ```
 
-Typical files include:
+The default database is `data/speed-trap.sqlite`. None of these runtime files belong in Git.
 
-- `overlay.mp4`
-- `summary.csv`
-- `events.jsonl`
-- `metadata.json`
+Optional environment variables:
 
-SQLite index file:
+| Variable | Default / use |
+| --- | --- |
+| `PORT` / `HOST` | API: `8787` / `127.0.0.1` |
+| `SPEED_TRAP_PYTHON_BIN` | Override the automatically detected Python environment |
+| `SPEED_TRAP_CAMERA_CONFIG` | Repository-relative or absolute camera YAML path |
+| `SPEED_TRAP_DB_PATH` | `data/speed-trap.sqlite`; use another path for an isolated demo |
+| `VITE_API_BASE_URL` | `http://localhost:8787/api` |
+| `VITE_ARTIFACT_BASE_URL` | `http://localhost:8787/artifacts` |
 
-- `data/speed-trap.sqlite`
+Vite variables may be placed in `apps/dashboard/.env.local`; see [the example](apps/dashboard/.env.example). API variables are shell environment variables, not automatically loaded from `.env` files.
 
-## Accuracy Notes
+## Project structure
 
-This demo works best when:
+```text
+apps/dashboard/      React + Vite + TypeScript UI
+apps/api/            Express API, Python job runner, Node built-in SQLite
+engine/python/       YOLO detection, ByteTrack, speed gate, privacy, exports
+scripts/             Local runners and reproducible README GIF export
+docs/                Guides and public demo assets
+```
 
-- the camera is fixed
-- the road perspective is stable
-- the two lines are placed carefully
-- `distance_meters` is measured correctly
-- ROI matches the intended carriageway
-- vehicle movement direction matches the configured direction
+The main dashboard at `/` runs real recorded-file analysis. `/radar` is a local preview and visual calibration demo; `/presentation` is a simulated multi-camera presentation. Those presentation screens do not implement live network ingest.
 
-This demo works badly when:
+## Build and checks
 
-- the camera shakes or pans
-- the scene changes during recording
-- vehicles are heavily occluded
-- IDs switch often during tracking
-- distance calibration is guessed instead of measured
+```bash
+pnpm build
+pnpm build:radar
+cd engine/python
+.venv/bin/python -m unittest discover -s tests -v
+```
 
-## Current Stack
+The GitHub workflow builds both frontend variants and the API, then checks the speed formula and rejection cases without downloading model weights. A full video run additionally needs the Python requirements, FFmpeg, a model, and your recording.
 
-- Frontend: React + Vite + TypeScript
-- API: Node.js + Express + SQLite
-- Engine: Python + OpenCV + Ultralytics YOLO + ByteTrack
+After `pnpm build`, `pnpm --filter @speed-trap/api start` runs the compiled API. `pnpm --filter @speed-trap/dashboard preview` serves the built UI locally. Static hosting such as Netlify serves the frontend only; processing still needs the Node API and Python engine. The API is a local development tool without authentication or a public-service job queue.
 
-## Useful Docs
+## Limitations and troubleshooting
 
-- `docs/ghid-viteza-ai-ro.md`
-- `docs/video-production-playbook-ro.md`
+- **No final speed:** the car may not cross both gates, may move in the opposite direction, fall outside the ROI, or receive a new tracker ID. A visible box is not enough.
+- **Wrong or implausible speed:** check the road distance, original pixel dimensions, gate order, direction, camera stability, and the red anchor. Crossing times are frame-quantized; the debounce interval may reject very short crossings.
+- **Preview does not play:** check `ffmpeg -version` and rerun the job. The engine keeps a raw MP4 fallback if transcoding fails, but not all browsers play it.
+- **Python cannot start:** install requirements into `engine/python/.venv`, or set `SPEED_TRAP_PYTHON_BIN` explicitly.
+- **Model download fails:** check internet access and the installed Ultralytics version, or pre-download the named weights into `engine/python/`.
+- **Privacy:** default vehicle blur is a best-effort aid. Missed detections, faces, and other identifying details can remain; inspect any footage you share.
 
-## Current MVP Limits
+Processing is offline-first: no phone streaming backend, homography, per-lane calibration, continuous instantaneous speed, or certified accuracy validation. Use a fixed camera and a measured distance for meaningful experiments.
 
-- offline-first
-- one scene configuration at a time
-- two-line gate estimation, not homography-based speed measurement
-- optimized for explainability and fast iteration
+## More detail
 
-Not implemented yet:
+- [Romanian technical guide](docs/ghid-viteza-ai-ro.md)
+- [Video production notes](docs/video-production-playbook-ro.md)
+- [Media cuts and reproduction](docs/assets/README.md)
+- [Local demo reproduction](docs/demo.md)
 
-- true live phone ingest
-- homography-based continuous speed estimation
-- per-lane calibration
-- per-vehicle snapshot export
-- legal-grade validation
+This project uses [Ultralytics YOLO](https://github.com/ultralytics/ultralytics) and ByteTrack. Review [Ultralytics' AGPL-3.0 / Enterprise licensing](https://www.ultralytics.com/license) before redistributing or integrating the engine. Film and media rights are separate from code licensing.
+
+## Watch the full experiment
+
+[![Watch Radarul s-a SCHIMBAT on YouTube](docs/assets/video-preview.jpg)](https://www.youtube.com/watch?v=CDCUi20Q6CM)
+
+**[Radarul s-a SCHIMBAT — watch on YouTube](https://www.youtube.com/watch?v=CDCUi20Q6CM)**
+
+Romanian audio. **English subtitles available** — enable captions in the YouTube player.

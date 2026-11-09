@@ -270,6 +270,7 @@ function DashboardPage() {
         <p className="hero-copy">
           Pipeline offline cu YOLO26n + ByteTrack + poarta A→B pentru estimare viteza.
         </p>
+        <p className="disclaimer-text">Doar pentru divertisment. Nu este masurare legala.</p>
       </header>
 
       <section className="status-strip">
