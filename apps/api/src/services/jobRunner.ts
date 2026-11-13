@@ -222,6 +222,12 @@ async function runJobInternal(jobId: string, request: CreateJobRequest, jobOutpu
       return;
     }
 
+    // A spawn error also emits close. Preserve the useful startup error instead
+    // of replacing it with an empty "unknown error" message on the second event.
+    if (latest.status === "failed") {
+      return;
+    }
+
     // We handle success path when exit code is zero.
     if (code === 0) {
       // We compute artifact file paths.

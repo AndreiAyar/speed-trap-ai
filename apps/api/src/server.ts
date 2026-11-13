@@ -12,6 +12,7 @@ import cors from "cors";
 
 // We import jobs router with all core API endpoints.
 import { jobsRouter } from "./routes/jobs.js";
+import { isAllowedOrigin } from "./services/origins.js";
 
 // We create Express app instance.
 const app = express();
@@ -19,8 +20,15 @@ const app = express();
 // We parse JSON request bodies.
 app.use(express.json());
 
-// We allow cross-origin calls from local frontend.
-app.use(cors());
+// Reject disallowed browser origins before any job can be created or deleted.
+app.use((req, res, next) => {
+  if (!isAllowedOrigin(req.headers.origin)) {
+    res.status(403).json({ error: "Browser origin is not allowed. Use the local dashboard." });
+    return;
+  }
+  next();
+});
+app.use(cors({ origin: true }));
 
 // We mount jobs API under /api namespace.
 app.use("/api", jobsRouter);

@@ -2,6 +2,7 @@
 
 # Typing improves readability of yielded frame dictionaries.
 from typing import Dict, Generator, List, Tuple
+import math
 
 # OpenCV is used for video metadata such as FPS.
 import cv2
@@ -12,23 +13,22 @@ try:
 except Exception:  # pragma: no cover - best-effort optional import
     torch = None
 
-# Ultralytics model API provides detection + tracking.
-from ultralytics import YOLO
-
-
 # This helper opens video and returns frame rate.
 def read_video_fps(video_path: str) -> float:
     # We open the video source with OpenCV.
     cap = cv2.VideoCapture(video_path)
 
-    # We fetch FPS metadata and fallback to 30 if unavailable.
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    opened = cap.isOpened()
+    fps = cap.get(cv2.CAP_PROP_FPS)
 
     # We release the file handle immediately after reading metadata.
     cap.release()
 
-# We return a safe float FPS value.
-    return float(fps if fps > 0 else 30.0)
+    if not opened:
+        raise ValueError("Cannot open the input video. Check the file path and codec.")
+    if not math.isfinite(fps) or fps <= 0:
+        raise ValueError("Video has no valid FPS metadata. Convert it to a constant-frame-rate video first.")
+    return float(fps)
 
 
 # This helper selects a safe inference device from a friendly config value.
@@ -91,6 +91,10 @@ def iter_tracked_frames(
     conf_threshold: float,
     device: str,
 ) -> Generator[Dict, None, None]:
+    # Import the detector only for an actual inference run. Geometry/export tests
+    # can exercise the rest of the engine without downloading Torch or weights.
+    from ultralytics import YOLO
+
     # We try loading primary model first and fallback on failure.
     try:
         model = YOLO(model_primary)

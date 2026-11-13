@@ -30,6 +30,7 @@ from modules.detect_track import iter_tracked_frames, read_video_fps, resolve_in
 from modules.exporters import build_artifact_paths, ensure_dir, write_events_jsonl, write_metadata_json, write_summary_csv
 from modules.privacy_blur import blur_bbox_region
 from modules.speed_gate import TwoLineSpeedGate
+from modules.configuration import validate_camera_config, validate_frame_geometry
 
 
 # This helper parses flexible CLI booleans like true/false/1/0/on/off.
@@ -374,6 +375,7 @@ def main():
     # We load scene configuration from YAML.
     with open(args.config, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
+    validate_camera_config(cfg)
 
     # We build all artifact file paths in one place.
     artifact_paths = build_artifact_paths(args.out)
@@ -470,6 +472,7 @@ def main():
 
         # We initialize video writer once frame dimensions are known.
         if writer is None:
+            validate_frame_geometry(cfg, frame.shape[1], frame.shape[0])
             # We choose MP4 codec for editor-friendly output.
             fourcc = cv2.VideoWriter_fourcc(*"mp4v")
 
@@ -480,6 +483,8 @@ def main():
                 fps,
                 (frame.shape[1], frame.shape[0]),
             )
+            if not writer.isOpened():
+                raise RuntimeError("Cannot initialize the MP4 writer. Check your OpenCV/FFmpeg installation.")
 
         # We draw ROI boundary if configured.
         if show_roi_overlay_on_video:

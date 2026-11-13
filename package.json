@@ -2,6 +2,7 @@
   "name": "speed-trap-ai",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "packageManager": "pnpm@10.15.0",
   "engines": {
     "node": ">=22.13.0",
@@ -14,6 +15,13 @@
   },
   "description": "Entertainment-first AI speed trap demo with two-line gate speed estimation.",
   "scripts": {
+    "setup:engine": "node scripts/project.mjs setup",
+    "doctor": "node scripts/project.mjs doctor",
+    "process:video": "node scripts/project.mjs process",
+    "test:engine": "node scripts/project.mjs test",
+    "test:api": "pnpm --filter @speed-trap/api build && node --test apps/api/tests/api.test.mjs",
+    "test": "pnpm test:engine && pnpm test:api",
+    "check": "pnpm build && pnpm build:radar && pnpm test",
     "dev:api": "pnpm --filter @speed-trap/api dev",
     "dev:dashboard": "pnpm --filter @speed-trap/dashboard dev",
     "dev": "pnpm -r --parallel --filter @speed-trap/api --filter @speed-trap/dashboard dev",
