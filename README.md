@@ -92,8 +92,8 @@ This screenshot uses the supplied 1.93-second traffic clip and a real engine run
 ### Requirements
 
 - **Node.js 22.13+** and **pnpm 10**; the repository pins pnpm 10.15.0.
-- **Python 3.11 or 3.12** recommended for PyTorch wheel compatibility.
-- **FFmpeg** on `PATH` for browser-playable H.264 output.
+- **Python 3.11 or 3.12** for the supported engine environment.
+- **FFmpeg and FFprobe** on `PATH` for browser-playable H.264 output and environment checks.
 - Internet for dependency installation and the first model download. A GPU is optional.
 
 ### Install
@@ -102,12 +102,11 @@ Clone or download this repository, open its folder, and run:
 
 ```bash
 pnpm install --frozen-lockfile
-python3.11 -m venv engine/python/.venv
-engine/python/.venv/bin/python -m pip install --upgrade pip
-engine/python/.venv/bin/python -m pip install -r engine/python/requirements.txt
+pnpm run setup:engine
+pnpm run doctor
 ```
 
-Use `python3` instead of `python3.11` if it already selects a supported version. On Windows, create the environment with `py -3.11 -m venv engine/python/.venv` and use `engine/python/.venv/Scripts/python.exe` for pip commands. The API finds either environment automatically.
+These commands work from the repository root in PowerShell, Bash, and zsh. Setup finds a supported Python, creates `engine/python/.venv`, and installs the engine dependencies there. No environment activation is needed. Use `pnpm run setup:engine` exactly; `pnpm setup` is pnpm's own, unrelated command. See [the contributor guide](CONTRIBUTING.md) for interpreter selection and manually managed environments.
 
 Put your recording at **`data/input/sample.mp4`**. Source videos and YOLO weights stay local; they are intentionally absent from a fresh clone. Ultralytics downloads `yolo26n.pt` when first needed and the engine tries `yolo11n.pt` if loading the primary model fails.
 
@@ -121,6 +120,8 @@ Put your recording at **`data/input/sample.mp4`**. Source videos and YOLO weight
 6. Start processing with the same repository-relative video path.
 
 **Copying YAML does not save it to the backend.** Save the configuration file yourself and create a new job after changes. The default coordinates are an example for a **3840 × 2160** scene; they must be replaced for another camera or resolution. Changing pixel resolution also changes the required coordinates.
+
+The engine rejects invalid distances, malformed gates, and coordinates outside the recording's dimensions. The recording must have valid FPS metadata; use a constant-frame-rate recording for frame-based timing.
 
 The default direction `[0, 1]` accepts downward motion; `[1, 0]` accepts rightward motion. Configure A before B along that path. To inspect the reverse flow, recalibrate the gates and direction and run another job.
 
@@ -146,20 +147,12 @@ PowerShell equivalent: `$env:SPEED_TRAP_CAMERA_CONFIG="engine/python/configs/my-
 ### Process a file without the dashboard
 
 ```bash
-./scripts/run-offline.sh data/input/sample.mp4
+pnpm run process:video data/input/sample.mp4
 # Optional second argument selects another camera configuration:
-./scripts/run-offline.sh data/input/sample.mp4 engine/python/configs/my-camera.yaml
+pnpm run process:video data/input/sample.mp4 engine/python/configs/my-camera.yaml
 ```
 
-Or run Python directly, including on Windows:
-
-```bash
-# Run from the repository root. Use .venv/Scripts/python.exe on Windows.
-engine/python/.venv/bin/python engine/python/run_pipeline.py \
-  --input data/input/sample.mp4 \
-  --config engine/python/configs/camera.default.yaml \
-  --out data/output/manual-demo
-```
+The same commands work on Windows, macOS, and Linux. Bash users can also use the existing `scripts/run-offline.sh` helper.
 
 Terminal-only runs write files without inserting a dashboard history entry. Dashboard jobs use the API, which also indexes their results in SQLite.
 
@@ -196,6 +189,7 @@ Optional environment variables:
 | `SPEED_TRAP_PYTHON_BIN` | Override the automatically detected Python environment |
 | `SPEED_TRAP_CAMERA_CONFIG` | Repository-relative or absolute camera YAML path |
 | `SPEED_TRAP_DB_PATH` | `data/speed-trap.sqlite`; use another path for an isolated demo |
+| `SPEED_TRAP_ALLOWED_ORIGINS` | Comma-separated additional dashboard origins; loopback origins are allowed by default |
 | `VITE_API_BASE_URL` | `http://localhost:8787/api` |
 | `VITE_ARTIFACT_BASE_URL` | `http://localhost:8787/artifacts` |
 
@@ -216,13 +210,10 @@ The main dashboard at `/` runs real recorded-file analysis. `/radar` is a local 
 ## Build and checks
 
 ```bash
-pnpm build
-pnpm build:radar
-cd engine/python
-.venv/bin/python -m unittest discover -s tests -v
+pnpm run check
 ```
 
-The GitHub workflow builds both frontend variants and the API, then checks the speed formula and rejection cases without downloading model weights. A full video run additionally needs the Python requirements, FFmpeg, a model, and your recording.
+This builds both frontend variants and the API, then runs the engine and HTTP integration tests. The GitHub workflow runs JavaScript checks with Node 22/24 and engine tests with Python 3.11/3.12 on Windows, macOS, and Linux. Tests cover the speed formula, calibration, video export, path boundaries, browser origins, and job startup errors without downloading model weights. A full detector run additionally needs the engine requirements, FFmpeg, a model, and your recording.
 
 After `pnpm build`, `pnpm --filter @speed-trap/api start` runs the compiled API. `pnpm --filter @speed-trap/dashboard preview` serves the built UI locally. Static hosting such as Netlify serves the frontend only; processing still needs the Node API and Python engine. The API is a local development tool without authentication or a public-service job queue.
 
@@ -243,8 +234,14 @@ Processing is offline-first: no phone streaming backend, homography, per-lane ca
 - [Video production notes](docs/video-production-playbook-ro.md)
 - [Media cuts and reproduction](docs/assets/README.md)
 - [Local demo reproduction](docs/demo.md)
+- [Contributing and development setup](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
-This project uses [Ultralytics YOLO](https://github.com/ultralytics/ultralytics) and ByteTrack. Review [Ultralytics' AGPL-3.0 / Enterprise licensing](https://www.ultralytics.com/license) before redistributing or integrating the engine. Film and media rights are separate from code licensing.
+## License
+
+The original code and written documentation are available under the **[MIT License](LICENSE)**. You may use, modify, and redistribute them, including commercially, while keeping the MIT copyright and license notice.
+
+The default engine uses **Ultralytics YOLO and its ByteTrack implementation**, which retain their **AGPL-3.0 / Enterprise** terms. MIT does not override those terms or make the combined stack MIT-only. Film, screenshots, and other media are excluded from the software license. See [third-party and media notices](THIRD_PARTY_NOTICES.md) and [Ultralytics licensing](https://www.ultralytics.com/license).
 
 ## Watch the full experiment
 

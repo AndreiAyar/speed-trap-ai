@@ -2,16 +2,16 @@
 ultralytics>=8.4.208,<9
 
 # OpenCV handles frame reading, drawing, blur, and video writing.
-opencv-python>=4.10.0
+opencv-python>=4.10.0,<6
 
 # NumPy supports geometry and vector math.
-numpy>=1.26.0
+numpy>=1.26.0,<3
 
 # PyYAML is used for camera config loading.
-PyYAML>=6.0.1
+PyYAML>=6.0.1,<7
 
 # Pandas is used to generate a simple CSV summary.
-pandas>=2.2.0
+pandas>=2.2.0,<4
 
 # LAP is required by Ultralytics tracking assignment (ByteTrack/BOT-SORT internals).
-lap>=0.5.13
+lap>=0.5.13,<1

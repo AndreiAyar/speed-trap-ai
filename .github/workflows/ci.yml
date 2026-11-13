@@ -1,27 +1,83 @@
-name: Build and speed-gate checks
+name: Build and tests
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  javascript:
+    name: JavaScript (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [22, 24]
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      # Full commit pins keep action upgrades explicit and reviewable.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version: ${{ matrix.node }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm build:radar
-      - uses: actions/setup-python@v5
+      - run: pnpm test:api
+
+  engine:
+    name: Engine (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: '3.11'
-      # Geometry tests need only NumPy; no GPU, weights, or video downloads.
-      - run: python -m pip install 'numpy>=1.26,<3'
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: engine/python/requirements-test.txt
+      - name: Install FFmpeg on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          if ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+      - name: Install FFmpeg on macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          if ! command -v ffmpeg >/dev/null; then
+            brew install ffmpeg
+          fi
+      - name: Install FFmpeg on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+            choco install ffmpeg -y --no-progress
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+      - run: ffmpeg -version
+      - run: ffprobe -version
+      # Deterministic tracks exercise real codecs, gate logic, and exports.
+      # No Torch, detector weights, GPU, or private recording is needed in CI.
+      - run: python -m pip install -r engine/python/requirements-test.txt
       - run: python -m unittest discover -s tests -v
         working-directory: engine/python
