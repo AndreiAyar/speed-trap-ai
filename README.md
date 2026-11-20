@@ -2,7 +2,7 @@
 
 ![Speed Trap AI — vehicle speed from video](docs/assets/readme-banner.png)
 
-I built this for a video filmed in Timișoara. It uses **YOLO26 and ByteTrack** to follow cars and estimate their speed from the time they take to travel between two lines. The dashboard lets you place the lines and review the processed recording.
+Vehicle detection, tracking, and speed estimation from traffic video, built with **Python, YOLO26, and ByteTrack**, a **React + TypeScript dashboard**, and a **Node.js API**. Use your own recording, place two virtual lines a measured distance apart, and review estimated speeds, annotated video, and CSV exports.
 
 > **Doar pentru divertisment. Nu este masurare legala.**
 >
@@ -249,4 +249,4 @@ The default engine uses **Ultralytics YOLO and its ByteTrack implementation**, w
 
 [Watch the full experiment on YouTube](https://www.youtube.com/watch?v=CDCUi20Q6CM)
 
-Romanian audio. **English subtitles available** — enable captions in the YouTube player.
+The original walkthrough was filmed in Timișoara. Romanian audio. **English subtitles available** — enable captions in the YouTube player.
